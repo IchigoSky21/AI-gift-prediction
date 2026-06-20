@@ -188,7 +188,7 @@
             Berikan rekomendasi yang spesifik, unik, dan sangat cocok dengan hobi/minatnya. Jangan rekomendasikan uang tunai atau voucher. Format harga harus dalam Rupiah.`;
 
             // Prepare API Request to Gemini
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
             
             const payload = {
                 contents: [{ parts: [{ text: userPrompt }] }],
