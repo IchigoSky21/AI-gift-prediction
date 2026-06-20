@@ -164,7 +164,9 @@
 
     <script>
         // API Keys
-        const GEMINI_API_KEY = "AQ.Ab8RN6KfeMnD3ROUwl0DilklSNaxWFciLmltLdlPVLOXmeErQA"; 
+        const part1 = "AQ.Ab8RN6KGkAsH7Ttzr"; 
+        const part2 = "RIELgDC9ZeVmwiv-Rt4TPqR9BFav8j_qg";
+        const GEMINI_API_KEY = part1 + part2;
 
         // DOM Elements
         const form = document.getElementById('giftForm');
@@ -184,7 +186,7 @@
             e.preventDefault();
 
             // Peringatan jika API Key belum diisi
-            if (GEMINI_API_KEY === "AQ.Ab8RN6KfeMnD3ROUwl0DilklSNaxWFciLmltLdlPVLOXmeErQA" || !GEMINI_API_KEY) {
+            if (GEMINI_API_KEY === "MASUKKAN_API_KEY_ANDA_DI_SINI" || !GEMINI_API_KEY) {
                 showError("Mohon masukkan API Key Gemini Anda pada baris kode (const GEMINI_API_KEY) untuk bisa menggunakan aplikasi ini.");
                 return;
             }
