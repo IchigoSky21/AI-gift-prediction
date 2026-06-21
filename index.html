@@ -25,36 +25,42 @@
         /* Menggunakan font Nunito agar lebih membulat dan ceria */
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
         body { font-family: 'Nunito', sans-serif; overflow-x: hidden; }
-        
-        /* Animasi Pop-Up memantul */
-        .pop-in { animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; opacity: 0; transform: scale(0.9); }
-        @keyframes popIn { to { opacity: 1; transform: scale(1); } }
-        
+
+        /* Animasi pop-in dikalemin: dari overshoot/bouncy jadi ease-out halus */
+        .pop-in { animation: popIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: scale(0.97) translateY(6px); }
+        @keyframes popIn { to { opacity: 1; transform: scale(1) translateY(0); } }
+
         .spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 3px solid white; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         .spinner-large { width: 40px; height: 40px; border-width: 4px; border-top-width: 4px; border-color: rgba(236, 72, 153, 0.2); border-top-color: #ec4899; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Efek Kaca (Glassmorphism) disesuaikan untuk Dark Mode */
+        /* Efek Kaca (Glassmorphism) - blur dikurangi sedikit untuk performa */
         .glass-card {
             background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.6);
             box-shadow: 0 10px 30px -10px rgba(236, 72, 153, 0.15);
         }
         .dark .glass-card {
-            background: rgba(31, 41, 55, 0.75); /* bg-gray-800 dengan transparansi */
-            border: 1px solid rgba(75, 85, 99, 0.4); /* border-gray-600 */
+            background: rgba(31, 41, 55, 0.75);
+            border: 1px solid rgba(75, 85, 99, 0.4);
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Hormati preferensi reduced-motion pengguna */
+        @media (prefers-reduced-motion: reduce) {
+            .pop-in { animation: none !important; opacity: 1 !important; transform: none !important; }
+            .spinner, .spinner-large { animation: none !important; }
         }
     </style>
 </head>
 <body class="min-h-screen bg-pink-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 p-4 md:p-8 transition-colors relative z-0">
 
+    <!-- Blob latar dikalemin: dari 3 jadi 2, animate-pulse dihapus, ukuran & opacity diturunkan -->
     <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-pink-300 dark:bg-pink-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-50 animate-pulse"></div>
-        <div class="absolute top-[20%] right-[-10%] w-[400px] h-[400px] bg-yellow-200 dark:bg-yellow-900/30 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-60"></div>
-        <div class="absolute bottom-[-10%] left-[20%] w-[600px] h-[600px] bg-purple-300 dark:bg-purple-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-50"></div>
+        <div class="absolute top-[-10%] left-[-5%] w-[380px] h-[380px] bg-pink-300 dark:bg-pink-900/25 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-35"></div>
+        <div class="absolute bottom-[-10%] right-[-5%] w-[340px] h-[340px] bg-orange-200 dark:bg-orange-900/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-35"></div>
     </div>
 
     <div class="max-w-4xl mx-auto space-y-8 relative z-10">
@@ -94,26 +100,44 @@
         </div>
 
         <div class="grid md:grid-cols-12 gap-8 items-start pop-in" style="animation-delay: 0.1s;">
-            
+
             <div class="md:col-span-5 glass-card rounded-3xl p-6">
                 <form id="giftForm" class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <select name="hubungan" id="hubungan" class="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/70 dark:bg-gray-700/70 dark:text-white focus:ring-2 focus:ring-pink-400 outline-none transition-all">
                             <option value="Teman">Teman</option>
+                            <option value="Sahabat">Sahabat</option>
                             <option value="Pacar">Pacar</option>
                             <option value="Suami/Istri">Suami/Istri</option>
+                            <option value="Orang Tua">Orang Tua</option>
+                            <option value="Anak">Anak</option>
+                            <option value="Saudara">Saudara</option>
+                            <option value="Atasan/Bos">Atasan/Bos</option>
+                            <option value="Rekan Kerja">Rekan Kerja</option>
+                            <option value="Guru/Dosen">Guru/Dosen</option>
                         </select>
                         <select name="acara" id="acara" class="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/70 dark:bg-gray-700/70 dark:text-white focus:ring-2 focus:ring-pink-400 outline-none transition-all">
                             <option value="Ulang Tahun">Ulang Tahun</option>
                             <option value="Anniversary">Anniversary</option>
+                            <option value="Wisuda">Wisuda</option>
+                            <option value="Pernikahan">Pernikahan</option>
+                            <option value="Kelahiran Bayi">Kelahiran Bayi</option>
+                            <option value="Kenaikan Jabatan">Kenaikan Jabatan</option>
+                            <option value="Lebaran">Lebaran</option>
+                            <option value="Natal">Natal</option>
+                            <option value="Perpisahan">Perpisahan</option>
+                            <option value="Tanpa Acara Khusus">Tanpa Acara Khusus</option>
                         </select>
                     </div>
                     <input type="number" id="usia" min="1" max="120" placeholder="Usia (Cth: 25)" required class="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/70 dark:bg-gray-700/70 dark:text-white dark:placeholder-gray-400 focus:ring-2 focus:ring-pink-400 outline-none transition-all" />
                     <textarea id="hobi" placeholder="Hobi atau minat (Cth: Suka ngopi, nonton drakor)..." required rows="3" class="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/70 dark:bg-gray-700/70 dark:text-white dark:placeholder-gray-400 focus:ring-2 focus:ring-pink-400 outline-none transition-all"></textarea>
-                    <input type="number" id="budget" min="1000" placeholder="Budget Maksimal (Rp)" required class="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/70 dark:bg-gray-700/70 dark:text-white dark:placeholder-gray-400 focus:ring-2 focus:ring-pink-400 outline-none transition-all" />
-                    
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-bold pointer-events-none">Rp</span>
+                        <input type="text" inputmode="numeric" id="budget" placeholder="150.000" required class="w-full p-3.5 pl-11 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/70 dark:bg-gray-700/70 dark:text-white dark:placeholder-gray-400 focus:ring-2 focus:ring-pink-400 outline-none transition-all" />
+                    </div>
+
                     <div id="formError" class="hidden text-sm font-medium text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded-lg px-4 py-3"></div>
-                    
+
                     <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-pink-500 to-orange-400 hover:from-pink-600 hover:to-orange-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transform transition-all hover:-translate-y-1 hover:shadow-xl shadow-pink-200 dark:shadow-none">
                         <span id="btnText">✨ Temukan Kado Terbaik</span>
                         <div id="btnSpinner" class="spinner hidden"></div>
@@ -126,12 +150,12 @@
                     <button onclick="filterResults('lebih murah')" class="text-sm font-bold glass-card text-pink-600 dark:text-pink-300 px-5 py-2.5 rounded-full hover:scale-105 transition">💰 Lebih Murah</button>
                     <button onclick="filterResults('lebih unik')" class="text-sm font-bold glass-card text-purple-600 dark:text-purple-300 px-5 py-2.5 rounded-full hover:scale-105 transition">✨ Lebih Unik</button>
                 </div>
-                
+
                 <div id="loadingState" class="hidden h-64 flex flex-col items-center justify-center space-y-4 glass-card rounded-3xl">
                     <div class="spinner-large"></div>
-                    <p class="text-pink-600 dark:text-pink-400 font-bold animate-pulse">Meracik ide kado spesial...</p>
+                    <p class="text-pink-600 dark:text-pink-400 font-bold">Meracik ide kado spesial...</p>
                 </div>
-                
+
                 <div id="resultsContainer" class="space-y-5"></div>
             </div>
         </div>
@@ -300,7 +324,7 @@
                     document.getElementById('acara').value = entry.input.acara;
                     document.getElementById('usia').value = entry.input.usia;
                     document.getElementById('hobi').value = entry.input.hobi;
-                    document.getElementById('budget').value = entry.input.budget;
+                    document.getElementById('budget').value = formatRupiah(String(entry.input.budget));
 
                     const resultsContainer = document.getElementById('resultsContainer');
                     resultsContainer.innerHTML = '';
@@ -333,7 +357,6 @@
         // ===== Render Kartu Kado =====
         function createKadoCard(kado, index) {
             const card = document.createElement('div');
-            // Menambahkan class glass-card ke hasil
             card.className = 'glass-card p-5 rounded-3xl pop-in relative overflow-hidden flex flex-col md:flex-row gap-5';
             card.style.animationDelay = `${index * 90}ms`;
 
@@ -343,7 +366,7 @@
             img.src = buildImageUrl(kado);
             img.alt = kado.namaKado || 'Ilustrasi kado';
             img.loading = 'lazy';
-            img.className = 'w-full h-full object-cover transform transition duration-500 hover:scale-110';
+            img.className = 'w-full h-full object-cover transform transition duration-500 hover:scale-105';
             img.onerror = () => {
                 imgWrap.innerHTML = '';
                 const fallback = document.createElement('span');
@@ -399,7 +422,7 @@
             }
 
             const favBtn = document.createElement('button');
-            favBtn.className = 'text-2xl transition ml-auto hover:scale-125';
+            favBtn.className = 'text-2xl transition ml-auto hover:scale-110';
             favBtn.textContent = '❤️';
             favBtn.style.color = isFavorited(kado.namaKado) ? '#db2777' : '#9ca3af';
             favBtn.addEventListener('click', () => toggleFavorite(kado, favBtn));
@@ -422,10 +445,23 @@
             document.getElementById('giftForm').dispatchEvent(new Event('submit'));
         }
 
+        // ===== Format Rupiah pada input budget =====
+        function formatRupiah(value) {
+            const digits = value.replace(/\D/g, '');
+            if (!digits) return '';
+            return Number(digits).toLocaleString('id-ID');
+        }
+        function getRawBudget() {
+            return document.getElementById('budget').value.replace(/\D/g, '');
+        }
+        document.getElementById('budget').addEventListener('input', (e) => {
+            e.target.value = formatRupiah(e.target.value);
+        });
+
         // ===== Validasi =====
         function validateForm() {
             const usia = Number(document.getElementById('usia').value);
-            const budget = Number(document.getElementById('budget').value);
+            const budget = Number(getRawBudget());
             const errorBox = document.getElementById('formError');
             errorBox.classList.add('hidden');
             errorBox.textContent = '';
@@ -449,7 +485,7 @@
             document.getElementById('loadingState').classList.remove('hidden');
             document.getElementById('filterSection').classList.add('hidden');
             document.getElementById('resultsContainer').innerHTML = '';
-            
+
             const btn = document.getElementById('submitBtn');
             const btnText = document.getElementById('btnText');
             const btnSpinner = document.getElementById('btnSpinner');
@@ -462,10 +498,10 @@
                 acara: document.getElementById('acara').value,
                 usia: document.getElementById('usia').value,
                 hobi: document.getElementById('hobi').value,
-                budget: document.getElementById('budget').value
+                budget: getRawBudget()
             };
 
-            const prompt = `Berikan 6 rekomendasi kado yang sangat bervariasi dan unik untuk usia ${formInput.usia} hobi ${formInput.hobi} budget ${formInput.budget}. Format JSON: {recommendations: [{namaKado, estimasiHarga, alasan, kataKunciPencarian}]}`;
+            const prompt = `Berikan 6 rekomendasi kado yang sangat bervariasi dan unik untuk ${formInput.hubungan} dalam rangka ${formInput.acara}, usia ${formInput.usia} tahun, dengan hobi/minat: ${formInput.hobi}. Budget maksimal Rp${formInput.budget}. Format JSON: {recommendations: [{namaKado, estimasiHarga, alasan, kataKunciPencarian}]}`;
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`, {

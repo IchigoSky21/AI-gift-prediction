@@ -1,7 +1,7 @@
 {
-  "name": "KadoTepat - AI Gift Assistant",
-  "short_name": "KadoTepat",
-  "description": "Asisten AI pencari kado sempurna untuk orang tersayang.",
+  "name": "GIFTo - AI Gift Assistant",
+  "short_name": "GIFTo",
+  "description": "GIFTo - Asisten AI pencari kado praktis untuk orang tersayang.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
