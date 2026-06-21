@@ -57,7 +57,6 @@
 </head>
 <body class="min-h-screen bg-pink-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 p-4 md:p-8 transition-colors relative z-0">
 
-    <!-- Blob latar dikalemin: dari 3 jadi 2, animate-pulse dihapus, ukuran & opacity diturunkan -->
     <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
         <div class="absolute top-[-10%] left-[-5%] w-[380px] h-[380px] bg-pink-300 dark:bg-pink-900/25 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-35"></div>
         <div class="absolute bottom-[-10%] right-[-5%] w-[340px] h-[340px] bg-orange-200 dark:bg-orange-900/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-35"></div>
@@ -198,7 +197,7 @@
             });
         }
 
-        // ===== Image Generator (Pollinations) =====
+        // ===== Image Generator (Pollinations) DENGAN OPTIMASI =====
         function hashString(str) {
             let hash = 0;
             for (let i = 0; i < str.length; i++) {
@@ -209,10 +208,12 @@
         }
 
         function buildImageUrl(kado) {
-            const promptBase = kado.kataKunciPencarian || kado.namaKado || 'kado';
-            const prompt = `product photo of ${promptBase}, clean white background, studio lighting, high quality`;
+            const promptBase = kado.kataKunciPencarian || kado.namaKado || 'gift';
+            // Prompt diubah menjadi "product photography" agar lebih cepat dan realistis
+            const prompt = `product photography of ${promptBase}, minimalist clean white background, highly detailed`;
             const seed = hashString(kado.namaKado || promptBase) % 100000;
-            return `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true&model=flux&seed=${seed}`;
+            // Endpoint baru yang lebih responsif
+            return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true&seed=${seed}`;
         }
 
         // ===== Favorit =====
@@ -360,22 +361,40 @@
             card.className = 'glass-card p-5 rounded-3xl pop-in relative overflow-hidden flex flex-col md:flex-row gap-5';
             card.style.animationDelay = `${index * 90}ms`;
 
+            // --- Pembungkus Gambar dengan Indikator Loading ---
             const imgWrap = document.createElement('div');
-            imgWrap.className = 'w-full md:w-1/3 h-48 md:h-auto shrink-0 rounded-2xl overflow-hidden bg-white/50 dark:bg-gray-700 flex items-center justify-center shadow-inner';
+            imgWrap.className = 'w-full md:w-1/3 h-48 md:h-auto shrink-0 rounded-2xl overflow-hidden bg-white/50 dark:bg-gray-700 flex items-center justify-center shadow-inner relative';
+            
+            // Animasi tulisan saat gambar sedang dilukis oleh AI
+            const loadingText = document.createElement('span');
+            loadingText.className = 'text-xs font-bold text-pink-400 absolute animate-pulse z-0';
+            loadingText.textContent = 'Melukis gambar... 🎨';
+            imgWrap.appendChild(loadingText);
+
             const img = document.createElement('img');
             img.src = buildImageUrl(kado);
             img.alt = kado.namaKado || 'Ilustrasi kado';
             img.loading = 'lazy';
-            img.className = 'w-full h-full object-cover transform transition duration-500 hover:scale-105';
+            // Gambar disembunyikan (opacity-0) saat belum selesai loading
+            img.className = 'w-full h-full object-cover transform transition duration-500 hover:scale-105 opacity-0 relative z-10';
+            
+            // Saat selesai loading, hapus teks loading dan munculkan gambarnya
+            img.onload = () => {
+                img.classList.remove('opacity-0');
+                if (imgWrap.contains(loadingText)) imgWrap.removeChild(loadingText);
+            };
+
+            // Jika error/timeout, ganti dengan logo kado
             img.onerror = () => {
                 imgWrap.innerHTML = '';
                 const fallback = document.createElement('span');
-                fallback.className = 'text-5xl';
+                fallback.className = 'text-5xl relative z-10';
                 fallback.textContent = '🎁';
                 imgWrap.appendChild(fallback);
             };
             imgWrap.appendChild(img);
 
+            // --- Konten Teks ---
             const content = document.createElement('div');
             content.className = 'flex-1 flex flex-col justify-center';
 
