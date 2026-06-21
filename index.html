@@ -16,11 +16,24 @@
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 text-gray-800 p-4 md:p-8">
-    
+
     <div class="max-w-4xl mx-auto space-y-8">
-        <div class="text-center space-y-3 fade-in">
+        <div class="text-center space-y-3 fade-in relative">
+            <button id="favToggleBtn" class="absolute right-0 top-0 bg-white border border-pink-200 rounded-full px-3 py-1.5 text-sm font-medium text-pink-600 shadow-sm hover:bg-pink-50 transition flex items-center gap-1">
+                ❤️ Favorit
+                <span id="favCount" class="hidden bg-pink-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+            </button>
             <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900">Kado<span class="text-pink-600">Tepat</span></h1>
             <p class="text-lg text-gray-600">Asisten AI pencari kado sempurna.</p>
+        </div>
+
+        <!-- Panel Favorit -->
+        <div id="favoritSection" class="hidden bg-white rounded-2xl shadow-xl shadow-pink-100/50 p-6 border border-gray-100 fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-bold text-lg">Kado Favorit Saya</h2>
+                <button onclick="document.getElementById('favoritSection').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-sm">Tutup ✕</button>
+            </div>
+            <div id="favoritList" class="space-y-4"></div>
         </div>
 
         <div class="grid md:grid-cols-12 gap-8 items-start fade-in">
@@ -37,9 +50,10 @@
                             <option value="Anniversary">Anniversary</option>
                         </select>
                     </div>
-                    <input type="number" id="usia" placeholder="Usia (Cth: 25)" required class="w-full p-2.5 rounded-lg border border-gray-300" />
+                    <input type="number" id="usia" min="1" max="120" placeholder="Usia (Cth: 25)" required class="w-full p-2.5 rounded-lg border border-gray-300" />
                     <textarea id="hobi" placeholder="Hobi atau minat..." required rows="3" class="w-full p-2.5 rounded-lg border border-gray-300"></textarea>
-                    <input type="number" id="budget" placeholder="Budget Maksimal (Rp)" required class="w-full p-2.5 rounded-lg border border-gray-300" />
+                    <input type="number" id="budget" min="1000" placeholder="Budget Maksimal (Rp)" required class="w-full p-2.5 rounded-lg border border-gray-300" />
+                    <div id="formError" class="hidden text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2"></div>
                     <button type="submit" id="submitBtn" class="w-full bg-pink-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2">
                         <span id="btnText">Temukan Kado Terbaik</span>
                         <div id="btnSpinner" class="spinner hidden"></div>
@@ -66,41 +80,171 @@
         const part2 = "foeK-K_9NWhZDImvaqQsg_mmy7vA1Sg";
         const GEMINI_API_KEY = part1 + part2;
 
-        // Fitur Favorit
-        function toggleFavorite(btn, namaKado) {
-            let favs = JSON.parse(localStorage.getItem('favs') || '[]');
-            if (favs.includes(namaKado)) {
-                favs = favs.filter(i => i !== namaKado);
-                btn.style.color = 'gray';
-            } else {
-                favs.push(namaKado);
-                btn.style.color = '#db2777';
+        // ===== Favorit (disimpan sebagai object lengkap, bukan cuma nama) =====
+        function getFavorites() {
+            try {
+                const raw = JSON.parse(localStorage.getItem('favs') || '[]');
+                // migrasi data lama (array of string) -> array of object
+                return raw.map(item => typeof item === 'string'
+                    ? { namaKado: item, estimasiHarga: '', alasan: '', kataKunciPencarian: '' }
+                    : item);
+            } catch {
+                return [];
             }
+        }
+
+        function saveFavorites(favs) {
             localStorage.setItem('favs', JSON.stringify(favs));
         }
 
-        // Fitur Share WA
+        function isFavorited(namaKado) {
+            return getFavorites().some(f => f.namaKado === namaKado);
+        }
+
+        function toggleFavorite(kado, btnEl) {
+            let favs = getFavorites();
+            if (isFavorited(kado.namaKado)) {
+                favs = favs.filter(f => f.namaKado !== kado.namaKado);
+            } else {
+                favs.push(kado);
+            }
+            saveFavorites(favs);
+            if (btnEl) btnEl.style.color = isFavorited(kado.namaKado) ? '#db2777' : 'gray';
+            renderFavoritPanel();
+        }
+
+        function renderFavoritPanel() {
+            const favs = getFavorites();
+            const countBadge = document.getElementById('favCount');
+            countBadge.textContent = favs.length;
+            countBadge.classList.toggle('hidden', favs.length === 0);
+
+            const container = document.getElementById('favoritList');
+            container.innerHTML = '';
+
+            if (favs.length === 0) {
+                const empty = document.createElement('p');
+                empty.className = 'text-sm text-gray-400 text-center py-6';
+                empty.textContent = 'Belum ada kado favorit. Tap ❤️ pada hasil rekomendasi untuk menyimpannya di sini.';
+                container.appendChild(empty);
+                return;
+            }
+
+            favs.forEach((kado, i) => container.appendChild(createKadoCard(kado, i)));
+        }
+
+        document.getElementById('favToggleBtn').addEventListener('click', () => {
+            const panel = document.getElementById('favoritSection');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) renderFavoritPanel();
+        });
+
+        // ===== Share WA =====
         function shareWA(nama, harga) {
             const text = `Hai! Aku nemu ide kado nih: ${nama} (Estimasi: ${harga}). Cek yuk!`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
 
-        // Tweaking AI
+        // ===== Render satu kartu kado (pakai DOM API, bukan innerHTML, biar aman dari karakter aneh/HTML di hasil AI) =====
+        function createKadoCard(kado, index) {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-4 rounded-xl shadow border fade-in';
+            card.style.animationDelay = `${index * 90}ms`;
+
+            const title = document.createElement('h3');
+            title.className = 'font-bold';
+            title.textContent = kado.namaKado;
+
+            const price = document.createElement('p');
+            price.className = 'text-pink-600 text-sm font-semibold';
+            price.textContent = kado.estimasiHarga;
+
+            const reason = document.createElement('p');
+            reason.className = 'text-sm my-2 text-gray-600';
+            reason.textContent = kado.alasan;
+
+            const actions = document.createElement('div');
+            actions.className = 'flex flex-wrap gap-2 mt-3 items-center';
+
+            const waBtn = document.createElement('button');
+            waBtn.className = 'text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded transition';
+            waBtn.textContent = 'Bagikan WA';
+            waBtn.addEventListener('click', () => shareWA(kado.namaKado, kado.estimasiHarga));
+            actions.appendChild(waBtn);
+
+            // Quick win: tombol cari di marketplace pakai kataKunciPencarian dari AI
+            if (kado.kataKunciPencarian) {
+                const tokopediaLink = document.createElement('a');
+                tokopediaLink.href = `https://www.tokopedia.com/search?st=product&q=${encodeURIComponent(kado.kataKunciPencarian)}`;
+                tokopediaLink.target = '_blank';
+                tokopediaLink.rel = 'noopener noreferrer';
+                tokopediaLink.className = 'text-sm bg-green-50 text-green-700 hover:bg-green-100 px-3 py-1 rounded transition';
+                tokopediaLink.textContent = '🛒 Tokopedia';
+                actions.appendChild(tokopediaLink);
+
+                const shopeeLink = document.createElement('a');
+                shopeeLink.href = `https://shopee.co.id/search?keyword=${encodeURIComponent(kado.kataKunciPencarian)}`;
+                shopeeLink.target = '_blank';
+                shopeeLink.rel = 'noopener noreferrer';
+                shopeeLink.className = 'text-sm bg-orange-50 text-orange-700 hover:bg-orange-100 px-3 py-1 rounded transition';
+                shopeeLink.textContent = '🛍️ Shopee';
+                actions.appendChild(shopeeLink);
+            }
+
+            const favBtn = document.createElement('button');
+            favBtn.className = 'text-lg transition ml-auto';
+            favBtn.textContent = '❤️';
+            favBtn.style.color = isFavorited(kado.namaKado) ? '#db2777' : 'gray';
+            favBtn.addEventListener('click', () => toggleFavorite(kado, favBtn));
+            actions.appendChild(favBtn);
+
+            card.appendChild(title);
+            card.appendChild(price);
+            card.appendChild(reason);
+            card.appendChild(actions);
+            return card;
+        }
+
+        // ===== Tweaking AI (filter cepat) =====
         async function filterResults(tipe) {
             const hobi = document.getElementById('hobi').value;
             document.getElementById('hobi').value = `${hobi}, tolong cari opsi yang ${tipe} saja`;
             document.getElementById('giftForm').dispatchEvent(new Event('submit'));
         }
 
-        // Submit Handler
+        // ===== Validasi form (quick win) =====
+        function validateForm() {
+            const usia = Number(document.getElementById('usia').value);
+            const budget = Number(document.getElementById('budget').value);
+            const errorBox = document.getElementById('formError');
+            errorBox.classList.add('hidden');
+            errorBox.textContent = '';
+
+            if (!usia || usia < 1 || usia > 120) {
+                errorBox.textContent = 'Usia harus di antara 1 - 120 tahun.';
+                errorBox.classList.remove('hidden');
+                return false;
+            }
+            if (!budget || budget < 1000) {
+                errorBox.textContent = 'Budget minimal Rp1.000.';
+                errorBox.classList.remove('hidden');
+                return false;
+            }
+            return true;
+        }
+
+        // ===== Submit Handler =====
         document.getElementById('giftForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            if (!validateForm()) return;
+
             document.getElementById('loadingState').classList.remove('hidden');
             document.getElementById('filterSection').classList.add('hidden');
             document.getElementById('resultsContainer').innerHTML = '';
 
             const prompt = `Berikan 3 rekomendasi kado untuk usia ${document.getElementById('usia').value} hobi ${document.getElementById('hobi').value} budget ${document.getElementById('budget').value}. Format JSON: {recommendations: [{namaKado, estimasiHarga, alasan, kataKunciPencarian}]}`;
-            
+
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
@@ -114,26 +258,19 @@
 
                 document.getElementById('loadingState').classList.add('hidden');
                 document.getElementById('filterSection').classList.remove('hidden');
-                
-                recs.forEach(kado => {
-                    const div = document.createElement('div');
-                    div.className = "bg-white p-4 rounded-xl shadow border";
-                    div.innerHTML = `
-                        <h3 class="font-bold">${kado.namaKado}</h3>
-                        <p class="text-pink-600 text-sm font-semibold">${kado.estimasiHarga}</p>
-                        <p class="text-sm my-2">${kado.alasan}</p>
-                        <div class="flex gap-2 mt-3">
-                            <button onclick="shareWA('${kado.namaKado}', '${kado.estimasiHarga}')" class="text-sm bg-gray-100 px-3 py-1 rounded">Bagikan WA</button>
-                            <button onclick="toggleFavorite(this, '${kado.namaKado}')" class="text-lg">❤️</button>
-                        </div>
-                    `;
-                    document.getElementById('resultsContainer').appendChild(div);
-                });
+
+                const container = document.getElementById('resultsContainer');
+                recs.forEach((kado, i) => container.appendChild(createKadoCard(kado, i)));
             } catch (err) {
-                alert("Error: " + err.message);
                 document.getElementById('loadingState').classList.add('hidden');
+                const errorBox = document.getElementById('formError');
+                errorBox.textContent = 'Gagal mengambil rekomendasi: ' + err.message;
+                errorBox.classList.remove('hidden');
             }
         });
+
+        // Render badge favorit saat halaman dibuka
+        renderFavoritPanel();
     </script>
 </body>
 </html>
