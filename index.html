@@ -22,11 +22,9 @@
         })();
     </script>
     <style>
-        /* Menggunakan font Nunito agar lebih membulat dan ceria */
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
         body { font-family: 'Nunito', sans-serif; overflow-x: hidden; }
 
-        /* Animasi pop-in dikalemin: dari overshoot/bouncy jadi ease-out halus */
         .pop-in { animation: popIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: scale(0.97) translateY(6px); }
         @keyframes popIn { to { opacity: 1; transform: scale(1) translateY(0); } }
 
@@ -34,7 +32,6 @@
         .spinner-large { width: 40px; height: 40px; border-width: 4px; border-top-width: 4px; border-color: rgba(236, 72, 153, 0.2); border-top-color: #ec4899; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Efek Kaca (Glassmorphism) */
         .glass-card {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
@@ -48,7 +45,6 @@
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
         }
 
-        /* Hormati preferensi reduced-motion pengguna */
         @media (prefers-reduced-motion: reduce) {
             .pop-in { animation: none !important; opacity: 1 !important; transform: none !important; }
             .spinner, .spinner-large { animation: none !important; }
@@ -57,7 +53,6 @@
 </head>
 <body class="min-h-screen bg-pink-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 p-4 md:p-8 transition-colors relative z-0">
 
-    <!-- Blob latar -->
     <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
         <div class="absolute top-[-10%] left-[-5%] w-[380px] h-[380px] bg-pink-300 dark:bg-pink-900/25 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-35"></div>
         <div class="absolute bottom-[-10%] right-[-5%] w-[340px] h-[340px] bg-orange-200 dark:bg-orange-900/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-35"></div>
@@ -162,11 +157,7 @@
     </div>
 
     <script>
-        // API Keys
-        const part1 = "AQ.Ab8RN6IMlDhWNh55tS8";
-        const part2 = "foeK-K_9NWhZDImvaqQsg_mmy7vA1Sg";
-        const GEMINI_API_KEY = part1 + part2;
-        const PEXELS_API_KEY = "Z4VMLIxzJrgnNRzWuvftt2xHKYYMHNVGvAdyxOI2VQ9vHDsRcmoCxjIw";
+        // API KEY TELAH DIHAPUS DARI FRONTEND DEMI KEAMANAN!
 
         // ===== Dark mode =====
         function applyTheme(isDark) {
@@ -344,7 +335,7 @@
             card.className = 'glass-card p-5 rounded-3xl pop-in relative overflow-hidden flex flex-col md:flex-row gap-5';
             card.style.animationDelay = `${index * 90}ms`;
 
-            // --- Pembungkus Gambar dengan API Pexels ---
+            // --- Pembungkus Gambar dengan Panggilan Backend Serverless ---
             const imgWrap = document.createElement('div');
             imgWrap.className = 'w-full md:w-1/3 h-48 md:h-auto shrink-0 rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center shadow-inner relative';
             
@@ -357,13 +348,11 @@
             img.alt = kado.namaKado;
             img.className = 'w-full h-full object-cover transform transition duration-500 hover:scale-105 opacity-0 relative z-10';
             
-            // Animasi transisi saat foto berhasil dimuat
             img.onload = () => {
                 img.classList.remove('opacity-0');
                 if (imgWrap.contains(loadingText)) imgWrap.removeChild(loadingText);
             };
 
-            // Fallback: Jika error / foto tidak ditemukan
             img.onerror = () => {
                 imgWrap.innerHTML = '';
                 const fallback = document.createElement('span');
@@ -373,27 +362,24 @@
             };
             imgWrap.appendChild(img);
 
-            // Fungsi Asinkron untuk mengambil foto asli dari Pexels
+            // Fetch foto melalui backend Vercel kita
             async function fetchRealPhoto() {
                 try {
-                    // Gunakan kata kunci bahasa Inggris dari AI agar akurat, jika tidak ada gunakan kata kunci pencarian
                     const query = encodeURIComponent(kado.keywordInggris || kado.kataKunciPencarian || 'gift box');
-                    const response = await fetch(`https://api.pexels.com/v1/search?query=${query}&per_page=1`, {
-                        headers: { Authorization: PEXELS_API_KEY }
-                    });
+                    // Perhatikan: URL kini mengarah ke folder /api milik web Anda sendiri
+                    const response = await fetch(`/api/pexels?query=${query}`);
                     const data = await response.json();
                     
                     if (data.photos && data.photos.length > 0) {
-                        // Gunakan ukuran "medium" agar cepat dimuat dan hemat kuota
                         img.src = data.photos[0].src.medium; 
                     } else {
-                        img.dispatchEvent(new Event('error')); // Memicu logo kado jika tak ada foto
+                        img.dispatchEvent(new Event('error')); 
                     }
                 } catch (error) {
                     img.dispatchEvent(new Event('error'));
                 }
             }
-            fetchRealPhoto(); // Jalankan pencarian foto
+            fetchRealPhoto();
 
             // --- Konten Teks ---
             const content = document.createElement('div');
@@ -458,14 +444,12 @@
             return card;
         }
 
-        // ===== Tweaking AI =====
         async function filterResults(tipe) {
             const hobi = document.getElementById('hobi').value;
             document.getElementById('hobi').value = `${hobi}, tolong cari opsi yang ${tipe} saja`;
             document.getElementById('giftForm').dispatchEvent(new Event('submit'));
         }
 
-        // ===== Format Rupiah pada input budget =====
         function formatRupiah(value) {
             const digits = value.replace(/\D/g, '');
             if (!digits) return '';
@@ -478,7 +462,6 @@
             e.target.value = formatRupiah(e.target.value);
         });
 
-        // ===== Validasi =====
         function validateForm() {
             const usia = Number(document.getElementById('usia').value);
             const budget = Number(getRawBudget());
@@ -497,7 +480,6 @@
             return true;
         }
 
-        // ===== Submit Handler =====
         document.getElementById('giftForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!validateForm()) return;
@@ -521,19 +503,20 @@
                 budget: getRawBudget()
             };
 
-            // PROMPT DIPERBARUI: Meminta 6 kado & menyertakan keywordInggris untuk Pexels
             const prompt = `Berikan 6 rekomendasi kado yang sangat bervariasi dan unik untuk ${formInput.hubungan} dalam rangka ${formInput.acara}, usia ${formInput.usia} tahun, dengan hobi/minat: ${formInput.hobi}. Budget maksimal Rp${formInput.budget}. Format JSON: {recommendations: [{namaKado, estimasiHarga, alasan, kataKunciPencarian, keywordInggris}]}`;
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                // Perhatikan: URL kini mengarah ke folder /api milik web Anda sendiri
+                const response = await fetch(`/api/gemini`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({contents: [{parts: [{text: prompt}]}]})
+                    body: JSON.stringify({ prompt: prompt })
                 });
 
+                if (!response.ok) throw new Error('Network response was not ok');
+
                 const data = await response.json();
-                const jsonText = data.candidates[0].content.parts[0].text.replace(/```json|
-```/g, '');
+                const jsonText = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '');
                 const recs = JSON.parse(jsonText).recommendations;
 
                 document.getElementById('loadingState').classList.add('hidden');
@@ -546,7 +529,7 @@
             } catch (err) {
                 document.getElementById('loadingState').classList.add('hidden');
                 const errorBox = document.getElementById('formError');
-                errorBox.textContent = 'Oops! Gagal mengambil rekomendasi. Coba lagi.';
+                errorBox.textContent = 'Oops! Gagal mengambil rekomendasi. Cek koneksi Anda.';
                 errorBox.classList.remove('hidden');
             } finally {
                 btn.disabled = false;
@@ -555,7 +538,6 @@
             }
         });
 
-        // Initialize UI
         renderFavoritPanel();
         renderHistoryPanel();
     </script>
