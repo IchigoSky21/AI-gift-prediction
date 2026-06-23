@@ -1,4 +1,5 @@
-const CACHE_NAME = 'kadotepat-v1';
+// Nama cache diperbarui agar pengguna versi lama mendapat update
+const CACHE_NAME = 'gifto-v1';
 const APP_SHELL = [
   './',
   './index.html',
@@ -24,12 +25,20 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Hanya cache GET request ke origin sendiri (app shell).
-  // Request ke API Gemini/Pollinations dibiarkan langsung ke network.
-  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
-    return;
+  // Hanya proses metode GET
+  if (event.request.method !== 'GET') return;
+  
+  const url = new URL(event.request.url);
+  
+  // Pastikan request mengarah ke domain sendiri (sama origin)
+  if (url.origin !== self.location.origin) return;
+
+  // BYPASS CACHE: Jangan cache apapun yang mengarah ke backend (/api/)
+  if (url.pathname.startsWith('/api/')) {
+      return; 
   }
 
+  // Strategi Stale-While-Revalidate untuk aset statis (HTML, PNG, dll)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const networkFetch = fetch(event.request)
