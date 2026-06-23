@@ -1,9 +1,20 @@
 export default async function handler(req, res) {
-    // Hanya izinkan metode POST
+    // 1. Cek Metode HTTP
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
+    // 2. Cek Origin (Mencegah request dari domain asing)
+    const origin = req.headers.origin || '';
+    if (origin && !origin.includes('vercel.app') && !origin.includes('localhost')) {
+        return res.status(403).json({ error: 'Forbidden' });
+    }
+
     const { prompt } = req.body;
-    // Mengambil kunci rahasia dari Environment Variables Vercel
+
+    // 3. Validasi panjang dan keberadaan prompt
+    if (!prompt || typeof prompt !== 'string' || prompt.length > 2000) {
+        return res.status(400).json({ error: 'Invalid prompt' });
+    }
+
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
     try {
