@@ -132,16 +132,33 @@ header {
   background: var(--ink); color: var(--bg);
   border-bottom: 1px solid var(--rule);
   padding: 7px 0; overflow: hidden;
+  position: relative;
 }
+/* Gradient fade kiri-kanan — kesan profesional */
+.ticker::before,
+.ticker::after {
+  content: '';
+  position: absolute; top: 0; bottom: 0; width: 60px; z-index: 2; pointer-events: none;
+}
+.ticker::before { left:  0; background: linear-gradient(to right, var(--ink) 20%, transparent); }
+.ticker::after  { right: 0; background: linear-gradient(to left,  var(--ink) 20%, transparent); }
 .ticker-track {
-  display: inline-block; white-space: nowrap;
-  animation: marquee 22s linear infinite;
+  display: flex; white-space: nowrap; width: max-content;
+  animation: ticker-run 16s linear infinite;
+  will-change: transform;
 }
-.ticker-track span {
+/* Pause saat hover — nyaman dibaca */
+.ticker:hover .ticker-track { animation-play-state: paused; }
+.ticker-item {
   font-family: var(--sans); font-size: 10px; font-weight: 600;
-  letter-spacing: .12em; text-transform: uppercase; margin-right: 8px;
+  letter-spacing: .12em; text-transform: uppercase;
+  flex-shrink: 0; padding-right: 4px;
 }
-@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.ticker-sep { color: var(--accent); margin: 0 10px; flex-shrink: 0; font-size: 10px; }
+@keyframes ticker-run {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
 
 /* ── Panels (Riwayat / Koleksi) ────────────────────── */
 .panel {
@@ -421,7 +438,9 @@ footer {
   .logo { font-size: 28px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .kado-card, .ticker-track, .skel, .card-img { animation: none !important; transition: none !important; }
+  .kado-card, .skel, .card-img { animation: none !important; transition: none !important; }
+  /* Ticker tetap jalan di reduced-motion tapi lebih lambat — ini konten informasional */
+  .ticker-track { animation-duration: 40s !important; }
 }
 </style>
 </head>
@@ -450,10 +469,15 @@ footer {
 </header>
 
 <!-- Ticker -->
-<div class="ticker" aria-hidden="true">
-  <div class="ticker-track">
-    <span>★ KADO TERBAIK UNTUK ORANG TERSAYANG ★ DIDUKUNG GOOGLE GEMINI AI ★ LANGSUNG KE TOKOPEDIA &amp; SHOPEE ★ SIMPAN FAVORIT &amp; RIWAYAT ★ KADO TERBAIK UNTUK ORANG TERSAYANG ★ DIDUKUNG GOOGLE GEMINI AI ★ LANGSUNG KE TOKOPEDIA &amp; SHOPEE ★ SIMPAN FAVORIT &amp; RIWAYAT </span>
-    <span>★ KADO TERBAIK UNTUK ORANG TERSAYANG ★ DIDUKUNG GOOGLE GEMINI AI ★ LANGSUNG KE TOKOPEDIA &amp; SHOPEE ★ SIMPAN FAVORIT &amp; RIWAYAT ★ KADO TERBAIK UNTUK ORANG TERSAYANG ★ DIDUKUNG GOOGLE GEMINI AI ★ LANGSUNG KE TOKOPEDIA &amp; SHOPEE ★ SIMPAN FAVORIT &amp; RIWAYAT </span>
+<div class="ticker" aria-label="Info GIFTo">
+  <div class="ticker-track" id="tickerTrack">
+    <span class="ticker-item">Kado Terbaik untuk Orang Tersayang</span><span class="ticker-sep">★</span>
+    <span class="ticker-item">Didukung Google Gemini AI</span><span class="ticker-sep">★</span>
+    <span class="ticker-item">Langsung ke Tokopedia &amp; Shopee</span><span class="ticker-sep">★</span>
+    <span class="ticker-item">Simpan Favorit &amp; Riwayat</span><span class="ticker-sep">★</span>
+    <span class="ticker-item">Rekomendasi Personal &amp; Unik</span><span class="ticker-sep">★</span>
+    <span class="ticker-item">Foto Produk Nyata dari Pexels</span><span class="ticker-sep">★</span>
+    <span class="ticker-item">PWA — Install di HP kamu</span><span class="ticker-sep" style="margin-right:32px">★</span>
   </div>
 </div>
 
@@ -571,6 +595,15 @@ footer {
 
 <script>
 'use strict';
+
+// ── Ticker seamless loop ──────────────────────────────
+// Duplikasi konten agar translateX(-50%) = tepat satu putaran
+(function initTicker() {
+  const track = document.getElementById('tickerTrack');
+  if (!track) return;
+  const original = track.innerHTML;
+  track.innerHTML = original + original;
+})();
 
 // ── Constants ────────────────────────────────────────
 const SC  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ◆★•';
