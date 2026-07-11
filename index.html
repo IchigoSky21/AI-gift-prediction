@@ -1,545 +1,989 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="GIFTo - Asisten AI pencari kado praktis untuk orang tersayang.">
-    <meta name="theme-color" content="#ec4899">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <title>GIFTo - AI Gift Assistant</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { darkMode: 'class' };
-    </script>
-    <script>
-        (function () {
-            const saved = localStorage.getItem('theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (saved === 'dark' || (!saved && prefersDark)) {
-                document.documentElement.classList.add('dark');
-            }
-        })();
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
-        body { font-family: 'Nunito', sans-serif; overflow-x: hidden; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="GIFTo - Asisten AI pencari kado sempurna. Rekomendasi personal berdasarkan hubungan, acara, usia, hobi, dan budget.">
+<meta name="theme-color" content="#B45309">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ai-gift-prediction.vercel.app/">
+<meta property="og:title" content="GIFTo — AI Gift Assistant">
+<meta property="og:description" content="Temukan kado sempurna dengan bantuan AI. Rekomendasi personal, foto produk nyata, langsung ke Tokopedia & Shopee.">
+<meta property="og:image" content="https://ai-gift-prediction.vercel.app/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>GIFTo — AI Gift Assistant</title>
 
-        .pop-in { animation: popIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: scale(0.97) translateY(6px); }
-        @keyframes popIn { to { opacity: 1; transform: scale(1) translateY(0); } }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 
-        .spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 3px solid white; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        .spinner-large { width: 40px; height: 40px; border-width: 4px; border-top-width: 4px; border-color: rgba(236, 72, 153, 0.2); border-top-color: #ec4899; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+<style>
+/* ── Custom Properties ─────────────────────────────── */
+:root {
+  --bg:       #F5F0E8;
+  --card:     #FFFDF7;
+  --ink:      #1C1917;
+  --muted:    #78716C;
+  --accent:   #B45309;
+  --accent-bg:#FEF3C7;
+  --sage:     #4A7C59;
+  --rule:     #D6CFC0;
+  --rule-soft:#EDE8DF;
+  --serif:    'Playfair Display', Georgia, serif;
+  --sans:     'DM Sans', system-ui, sans-serif;
+}
+html.dark {
+  --bg:       #1C1917;
+  --card:     #241F1A;
+  --ink:      #F5F0E8;
+  --muted:    #A09B93;
+  --accent:   #D97706;
+  --accent-bg:#292018;
+  --sage:     #6AAB80;
+  --rule:     #3D3530;
+  --rule-soft:#2C2520;
+}
 
-        .glass-card {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            box-shadow: 0 10px 30px -10px rgba(236, 72, 153, 0.15);
-        }
-        .dark .glass-card {
-            background: rgba(31, 41, 55, 0.75);
-            border: 1px solid rgba(75, 85, 99, 0.4);
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-        }
+/* ── Reset ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  transition: background .3s, color .3s;
+  overflow-x: hidden;
+}
+a { text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+textarea { font-family: inherit; resize: none; }
 
-        @media (prefers-reduced-motion: reduce) {
-            .pop-in { animation: none !important; opacity: 1 !important; transform: none !important; }
-            .spinner, .spinner-large { animation: none !important; }
-        }
-    </style>
+/* ── Toast ─────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg);
+  font-family: var(--sans); font-size: 13px; font-weight: 600;
+  padding: 10px 22px; letter-spacing: .04em;
+  border-left: 3px solid var(--accent);
+  z-index: 9999; pointer-events: none;
+  opacity: 0; transition: opacity .25s, transform .25s;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Header ────────────────────────────────────────── */
+header {
+  border-bottom: 1px solid var(--rule);
+  background: var(--bg);
+  position: sticky; top: 0; z-index: 100;
+}
+.header-inner {
+  max-width: 980px; margin: 0 auto;
+  padding: 18px 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  flex-wrap: wrap;
+}
+.logo {
+  font-family: var(--serif); font-size: 34px; font-weight: 700;
+  letter-spacing: -.03em; line-height: 1; color: var(--ink);
+}
+.logo em { font-style: italic; color: var(--accent); }
+.logo-sub {
+  font-family: var(--sans); font-size: 10px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  margin-top: 3px;
+}
+.nav-btns { display: flex; gap: 8px; align-items: center; }
+.nav-btn {
+  font-family: var(--sans); font-size: 11px; font-weight: 600;
+  letter-spacing: .07em; text-transform: uppercase;
+  padding: 7px 14px; border: 1px solid var(--rule);
+  background: transparent; color: var(--muted);
+  transition: all .15s; position: relative;
+}
+.nav-btn:hover, .nav-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.nav-badge {
+  position: absolute; top: -7px; right: -7px;
+  background: var(--accent); color: #fff;
+  font-size: 9px; font-weight: 700; width: 17px; height: 17px;
+  border-radius: 50%; display: none; align-items: center; justify-content: center;
+}
+.nav-badge.visible { display: flex; }
+#themeBtn {
+  font-size: 14px; padding: 7px 10px;
+  border: 1px solid var(--rule); background: transparent; color: var(--muted);
+  transition: all .15s;
+}
+#themeBtn:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+#installBtn {
+  font-family: var(--sans); font-size: 11px; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase;
+  padding: 7px 14px; border: 1px solid var(--accent);
+  background: var(--accent); color: #fff; display: none;
+  transition: all .15s;
+}
+#installBtn:hover { background: var(--ink); border-color: var(--ink); }
+
+/* ── Ticker ────────────────────────────────────────── */
+.ticker {
+  background: var(--ink); color: var(--bg);
+  border-bottom: 1px solid var(--rule);
+  padding: 7px 0; overflow: hidden;
+}
+.ticker-track {
+  display: inline-block; white-space: nowrap;
+  animation: marquee 22s linear infinite;
+}
+.ticker-track span {
+  font-family: var(--sans); font-size: 10px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; margin-right: 8px;
+}
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ── Panels (Riwayat / Koleksi) ────────────────────── */
+.panel {
+  display: none; border-bottom: 1px solid var(--rule);
+  background: var(--card);
+}
+.panel.open { display: block; }
+.panel-inner { max-width: 980px; margin: 0 auto; padding: 22px 24px; }
+.panel-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+.panel-title {
+  font-family: var(--serif); font-size: 18px; font-weight: 700; color: var(--ink);
+}
+.btn-clear {
+  font-family: var(--sans); font-size: 10px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  background: none; border: 1px solid var(--rule); color: var(--muted);
+  padding: 4px 12px; transition: all .15s;
+}
+.btn-clear:hover { border-color: #dc2626; color: #dc2626; }
+.empty-msg { font-family: var(--sans); font-size: 13px; color: var(--muted); }
+.history-list { display: flex; flex-direction: column; gap: 0; }
+.history-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0; border-bottom: 1px solid var(--rule-soft);
+  cursor: pointer; transition: color .15s;
+}
+.history-item:last-child { border-bottom: none; }
+.history-item:hover { color: var(--accent); }
+.history-label { font-family: var(--sans); font-size: 13px; font-weight: 600; }
+.history-ts { font-family: var(--sans); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.history-action {
+  font-family: var(--sans); font-size: 11px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--accent); flex-shrink: 0;
+}
+.favs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.fav-item {
+  background: var(--bg); border: 1px solid var(--rule);
+  padding: 12px 14px; display: flex; justify-content: space-between; align-items: flex-start;
+}
+.fav-name { font-family: var(--serif); font-size: 14px; font-weight: 700; }
+.fav-price { font-family: var(--sans); font-size: 12px; color: var(--accent); font-weight: 600; margin-top: 3px; }
+.fav-remove {
+  background: none; border: none; font-size: 16px; color: var(--accent);
+  cursor: pointer; transition: transform .15s; flex-shrink: 0;
+}
+.fav-remove:hover { transform: scale(1.2); }
+
+/* ── Main layout ───────────────────────────────────── */
+.main-wrap {
+  max-width: 980px; margin: 0 auto; padding: 36px 24px;
+  display: grid; grid-template-columns: 300px 1fr; gap: 48px; align-items: start;
+}
+
+/* ── Form Panel ────────────────────────────────────── */
+.form-panel { border-top: 3px solid var(--ink); padding-top: 18px; }
+.section-label {
+  font-family: var(--serif); font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 22px;
+}
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 18px; }
+.field:last-of-type { margin-bottom: 0; }
+.field-label {
+  font-family: var(--sans); font-size: 10px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--accent);
+}
+.field-label-row { display: flex; justify-content: space-between; align-items: baseline; }
+.char-count { font-family: var(--sans); font-size: 10px; color: var(--muted); }
+.underline-input, .underline-select, .underline-textarea {
+  font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--ink);
+  background: transparent; border: none; border-bottom: 1.5px solid var(--rule);
+  padding: 7px 0; outline: none; width: 100%;
+  transition: border-color .2s;
+}
+.underline-select {
+  cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23B45309'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 4px center;
+  padding-right: 18px;
+}
+html.dark .underline-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23D97706'/%3E%3C/svg%3E");
+}
+.underline-input::placeholder, .underline-textarea::placeholder { color: var(--rule); }
+.underline-input:focus, .underline-select:focus, .underline-textarea:focus { border-bottom-color: var(--accent); }
+.underline-textarea { line-height: 1.65; }
+/* Budget live display */
+.budget-display {
+  font-family: var(--serif); font-size: 24px; font-weight: 700;
+  color: var(--accent); letter-spacing: -.02em; line-height: 1;
+  margin-bottom: 4px; display: none;
+  transition: opacity .2s;
+}
+.budget-wrap { position: relative; }
+.budget-prefix {
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  font-size: 13px; font-weight: 600; color: var(--muted); pointer-events: none;
+}
+#budget { padding-left: 22px; }
+/* Budget chips */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip {
+  font-family: var(--sans); font-size: 10px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 4px 10px; border: 1px solid var(--rule);
+  background: transparent; color: var(--muted);
+  transition: all .15s;
+}
+.chip:hover, .chip.active {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+/* Error */
+.form-error {
+  display: none; background: var(--accent-bg);
+  border-left: 3px solid var(--accent);
+  padding: 9px 12px; margin-top: 12px;
+}
+.form-error p {
+  font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--accent);
+}
+/* Submit */
+.submit-btn {
+  font-family: var(--sans); font-size: 11px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  background: var(--ink); color: var(--bg);
+  border: none; padding: 15px 0; width: 100%;
+  margin-top: 20px; transition: background .2s, opacity .2s;
+}
+.submit-btn:hover:not(:disabled) { background: var(--accent); }
+.submit-btn:disabled { opacity: .55; cursor: not-allowed; }
+/* Filter chips */
+#filterChips {
+  display: none; gap: 8px; margin-top: 20px;
+  padding-top: 16px; border-top: 1px solid var(--rule-soft);
+}
+#filterChips p {
+  font-family: var(--sans); font-size: 10px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 6px; width: 100%;
+}
+.filter-btn {
+  font-family: var(--sans); font-size: 10px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 5px 12px; border: 1px solid var(--rule);
+  background: transparent; color: var(--muted); transition: all .15s;
+}
+.filter-btn:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* ── Results ───────────────────────────────────────── */
+#resultsSection { display: none; }
+.results-header { border-top: 3px solid var(--ink); padding-top: 18px; margin-bottom: 18px; }
+.results-label {
+  font-family: var(--serif); font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+}
+#resultsContainer { display: flex; flex-direction: column; gap: 12px; }
+
+/* ── Kado Card ─────────────────────────────────────── */
+.kado-card {
+  display: flex; background: var(--card);
+  border: 1px solid var(--rule);
+  box-shadow: 1px 2px 6px rgba(28,25,23,.05);
+  animation: cardIn .5s ease both;
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s;
+}
+@keyframes cardIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+.card-num {
+  width: 50px; background: var(--ink); color: var(--bg);
+  font-family: var(--serif); font-size: 20px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; user-select: none; letter-spacing: -.02em;
+}
+.card-content { flex: 1; padding: 16px 18px 14px; display: flex; flex-direction: column; gap: 0; }
+.card-top-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.card-title {
+  font-family: var(--serif); font-size: 16px; font-weight: 700;
+  color: var(--ink); line-height: 1.3;
+}
+.fav-btn {
+  background: none; border: none; font-size: 17px; line-height: 1;
+  padding: 0; transition: color .2s, transform .15s; flex-shrink: 0;
+  color: var(--rule);
+}
+.fav-btn:hover { transform: scale(1.25); }
+.fav-btn.active { color: var(--accent); }
+.price-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.price-lbl {
+  font-family: var(--sans); font-size: 9px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+}
+.price-tag {
+  background: var(--accent-bg); color: #92400E;
+  font-family: var(--serif); font-size: 13px; font-weight: 700;
+  padding: 2px 10px; border: 1px solid #FDE68A;
+  display: inline-block;
+}
+html.dark .price-tag { color: var(--accent); border-color: #4A3010; }
+.card-desc {
+  font-family: var(--sans); font-size: 12px; font-weight: 400;
+  color: var(--muted); line-height: 1.7; margin-bottom: 13px;
+}
+.card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+.action-btn {
+  font-family: var(--sans); font-size: 10px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  background: none; color: var(--ink); border: 1px solid var(--rule);
+  padding: 5px 11px; transition: all .15s;
+}
+.action-btn:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.action-link {
+  font-family: var(--sans); font-size: 10px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  border: 1px solid; padding: 5px 11px; display: inline-block; transition: all .15s;
+}
+.action-link--sage { color: var(--sage); border-color: #A7C4B0; }
+.action-link--sage:hover { background: var(--sage); color: #fff; border-color: var(--sage); }
+.action-link--amber { color: var(--accent); border-color: var(--rule); }
+.action-link--amber:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+/* Card image */
+.card-img-wrap {
+  width: 130px; flex-shrink: 0; border-right: 1px solid var(--rule);
+  background: var(--rule-soft); display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.card-img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .4s; display: block; }
+.card-img.loaded { opacity: 1; }
+.card-img-fallback { font-size: 32px; position: absolute; }
+.card-img-loading {
+  position: absolute; font-family: var(--sans); font-size: 10px;
+  color: var(--muted); font-weight: 500; text-align: center; padding: 8px;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:.7} 50%{opacity:.4} }
+
+/* ── Skeleton ───────────────────────────────────────── */
+.skel {
+  background: var(--rule-soft);
+  animation: shimmer 1.5s infinite;
+  background: linear-gradient(90deg, var(--rule-soft) 25%, var(--rule) 50%, var(--rule-soft) 75%);
+  background-size: 200% 100%;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* ── Empty state ────────────────────────────────────── */
+.empty-state {
+  border-top: 3px solid var(--rule); padding-top: 18px; text-align: center; padding-bottom: 48px;
+}
+.empty-nums {
+  font-family: var(--serif); font-size: 40px; font-weight: 700;
+  color: var(--rule); line-height: 1; margin: 40px 0 14px;
+}
+.empty-title { font-family: var(--sans); font-size: 14px; color: var(--muted); font-weight: 500; margin-bottom: 4px; }
+.empty-sub { font-family: var(--sans); font-size: 12px; color: var(--rule); }
+
+/* ── Footer ────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--rule); margin-top: 24px;
+  padding: 14px 24px; background: var(--bg);
+}
+.footer-inner {
+  max-width: 980px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.footer-logo { font-family: var(--serif); font-size: 16px; font-weight: 700; color: var(--ink); }
+.footer-logo em { font-style: italic; color: var(--accent); }
+.footer-credit { font-family: var(--sans); font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: .04em; }
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 680px) {
+  .main-wrap { grid-template-columns: 1fr; gap: 32px; padding: 24px 16px; }
+  .card-img-wrap { display: none; }
+  .header-inner { padding: 14px 16px; }
+  .logo { font-size: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kado-card, .ticker-track, .skel, .card-img { animation: none !important; transition: none !important; }
+}
+</style>
 </head>
-<body class="min-h-screen bg-pink-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 p-4 md:p-8 transition-colors relative z-0">
 
-    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div class="absolute top-[-10%] left-[-5%] w-[380px] h-[380px] bg-pink-300 dark:bg-pink-900/25 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-35"></div>
-        <div class="absolute bottom-[-10%] right-[-5%] w-[340px] h-[340px] bg-orange-200 dark:bg-orange-900/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-35"></div>
+<body>
+<!-- Toast -->
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- Header -->
+<header>
+  <div class="header-inner">
+    <div>
+      <div class="logo">GIF<em>To</em></div>
+      <div class="logo-sub">Asisten Kado Berbasis AI</div>
+    </div>
+    <nav class="nav-btns">
+      <button id="installBtn">⬇ Install</button>
+      <button class="nav-btn" id="historyBtn" onclick="togglePanel('history')">Riwayat</button>
+      <button class="nav-btn" id="favsBtn" onclick="togglePanel('favs')">
+        Koleksi
+        <span class="nav-badge" id="favBadge">0</span>
+      </button>
+      <button id="themeBtn" title="Ganti tema">◑</button>
+    </nav>
+  </div>
+</header>
+
+<!-- Ticker -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span>★ KADO TERBAIK UNTUK ORANG TERSAYANG ★ DIDUKUNG GOOGLE GEMINI AI ★ LANGSUNG KE TOKOPEDIA &amp; SHOPEE ★ SIMPAN FAVORIT &amp; RIWAYAT ★ KADO TERBAIK UNTUK ORANG TERSAYANG ★ DIDUKUNG GOOGLE GEMINI AI ★ LANGSUNG KE TOKOPEDIA &amp; SHOPEE ★ SIMPAN FAVORIT &amp; RIWAYAT </span>
+    <span>★ KADO TERBAIK UNTUK ORANG TERSAYANG ★ DIDUKUNG GOOGLE GEMINI AI ★ LANGSUNG KE TOKOPEDIA &amp; SHOPEE ★ SIMPAN FAVORIT &amp; RIWAYAT ★ KADO TERBAIK UNTUK ORANG TERSAYANG ★ DIDUKUNG GOOGLE GEMINI AI ★ LANGSUNG KE TOKOPEDIA &amp; SHOPEE ★ SIMPAN FAVORIT &amp; RIWAYAT </span>
+  </div>
+</div>
+
+<!-- Panel Riwayat -->
+<div class="panel" id="historyPanel">
+  <div class="panel-inner">
+    <div class="panel-header">
+      <h2 class="panel-title">Riwayat Pencarian</h2>
+      <button class="btn-clear" id="clearHistoryBtn">Hapus Semua</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<!-- Panel Koleksi -->
+<div class="panel" id="favsPanel">
+  <div class="panel-inner">
+    <div class="panel-header">
+      <h2 class="panel-title">Koleksi Kado ♥</h2>
+    </div>
+    <div class="favs-grid" id="favsList"></div>
+  </div>
+</div>
+
+<!-- Main -->
+<main class="main-wrap">
+
+  <!-- Form -->
+  <aside class="form-panel">
+    <p class="section-label">— Isi Detail Penerima</p>
+    <form id="giftForm" novalidate>
+
+      <div class="form-grid-2">
+        <div class="field">
+          <label class="field-label" for="hubungan">Hubungan</label>
+          <select class="underline-select" id="hubungan"></select>
+        </div>
+        <div class="field">
+          <label class="field-label" for="acara">Acara</label>
+          <select class="underline-select" id="acara"></select>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="field">
+          <label class="field-label" for="gender">Jenis Kelamin</label>
+          <select class="underline-select" id="gender">
+            <option>Laki-laki</option>
+            <option>Perempuan</option>
+            <option selected>Netral</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label" for="usia">Usia (tahun)</label>
+          <input class="underline-input" type="number" id="usia" min="1" max="120" placeholder="25" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label-row">
+          <label class="field-label" for="hobi">Hobi / Minat</label>
+          <span class="char-count" id="hobiCount">0 karakter</span>
+        </div>
+        <textarea class="underline-textarea" id="hobi" rows="3"
+          placeholder="Suka ngopi, nonton drakor, koleksi tanaman..." required></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="budget">Budget Maksimal</label>
+        <div class="budget-display" id="budgetDisplay"></div>
+        <div class="budget-wrap">
+          <span class="budget-prefix">Rp</span>
+          <input class="underline-input" type="text" inputmode="numeric" id="budget" placeholder="150.000" required>
+        </div>
+        <div class="chips" id="budgetChips"></div>
+      </div>
+
+      <div class="form-error" id="formError"><p id="formErrorMsg"></p></div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">
+        <span id="btnText">Temukan Kado Terbaik</span>
+      </button>
+
+      <div id="filterChips">
+        <p>Saring Hasil</p>
+        <button type="button" class="filter-btn" id="filterCheap">Budget Rendah</button>
+        <button type="button" class="filter-btn" id="filterUnique">Paling Unik</button>
+      </div>
+    </form>
+  </aside>
+
+  <!-- Results -->
+  <section>
+    <div id="emptyState" class="empty-state">
+      <p class="empty-nums">01 — 06</p>
+      <p class="empty-title">Rekomendasi kado akan muncul di sini</p>
+      <p class="empty-sub">Isi form di kiri untuk mulai</p>
     </div>
 
-    <div class="max-w-4xl mx-auto space-y-8 relative z-10">
-
-        <div class="flex justify-end flex-wrap gap-2 pop-in">
-            <button id="installBtn" class="hidden bg-gradient-to-r from-pink-500 to-orange-400 text-white rounded-full px-4 py-2 text-sm font-bold shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5">⬇️ Install App</button>
-            <button id="historyToggleBtn" class="glass-card rounded-full px-4 py-2 text-sm font-bold text-pink-600 dark:text-pink-400 shadow-sm hover:scale-105 transition">🕒 Riwayat</button>
-            <button id="favToggleBtn" class="glass-card rounded-full px-4 py-2 text-sm font-bold text-pink-600 dark:text-pink-400 shadow-sm hover:scale-105 transition flex items-center gap-1">
-                ❤️ Favorit
-                <span id="favCount" class="hidden bg-pink-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
-            </button>
-            <button id="themeToggleBtn" class="glass-card rounded-full w-10 h-10 flex items-center justify-center text-sm shadow-sm hover:scale-105 transition">🌙</button>
-        </div>
-
-        <div class="text-center space-y-3 pop-in">
-            <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white drop-shadow-sm">GIF<span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-orange-400">To</span></h1>
-            <p class="text-lg font-medium text-gray-600 dark:text-gray-300">Asisten AI pencari kado praktis</p>
-        </div>
-
-        <div id="historySection" class="hidden glass-card rounded-3xl p-6 pop-in">
-            <div class="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
-                <h2 class="font-bold text-xl text-pink-600 dark:text-pink-400">Riwayat Pencarian</h2>
-                <div class="flex gap-3 items-center">
-                    <button id="clearHistoryBtn" class="text-xs font-bold bg-red-100 text-red-600 px-3 py-1.5 rounded-full hover:bg-red-200 transition">Hapus Semua</button>
-                    <button onclick="document.getElementById('historySection').classList.add('hidden')" class="text-gray-500 hover:text-gray-800 dark:hover:text-white text-sm font-bold bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-full transition">Tutup ✕</button>
-                </div>
-            </div>
-            <div id="historyList" class="space-y-3"></div>
-        </div>
-
-        <div id="favoritSection" class="hidden glass-card rounded-3xl p-6 pop-in">
-            <div class="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
-                <h2 class="font-bold text-xl text-pink-600 dark:text-pink-400">Kado Favorit Saya</h2>
-                <button onclick="document.getElementById('favoritSection').classList.add('hidden')" class="text-gray-500 hover:text-gray-800 dark:hover:text-white text-sm font-bold bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-full transition">Tutup ✕</button>
-            </div>
-            <div id="favoritList" class="space-y-4"></div>
-        </div>
-
-        <div class="grid md:grid-cols-12 gap-8 items-start pop-in" style="animation-delay: 0.1s;">
-
-            <div class="md:col-span-5 glass-card rounded-3xl p-6">
-                <form id="giftForm" class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <select name="hubungan" id="hubungan" class="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/70 dark:bg-gray-700/70 dark:text-white focus:ring-2 focus:ring-pink-400 outline-none transition-all">
-                            <option value="Teman">Teman</option>
-                            <option value="Sahabat">Sahabat</option>
-                            <option value="Pacar">Pacar</option>
-                            <option value="Suami/Istri">Suami/Istri</option>
-                            <option value="Orang Tua">Orang Tua</option>
-                            <option value="Anak">Anak</option>
-                            <option value="Saudara">Saudara</option>
-                            <option value="Atasan/Bos">Atasan/Bos</option>
-                            <option value="Rekan Kerja">Rekan Kerja</option>
-                            <option value="Guru/Dosen">Guru/Dosen</option>
-                        </select>
-                        <select name="acara" id="acara" class="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/70 dark:bg-gray-700/70 dark:text-white focus:ring-2 focus:ring-pink-400 outline-none transition-all">
-                            <option value="Ulang Tahun">Ulang Tahun</option>
-                            <option value="Anniversary">Anniversary</option>
-                            <option value="Wisuda">Wisuda</option>
-                            <option value="Pernikahan">Pernikahan</option>
-                            <option value="Kelahiran Bayi">Kelahiran Bayi</option>
-                            <option value="Kenaikan Jabatan">Kenaikan Jabatan</option>
-                            <option value="Lebaran">Lebaran</option>
-                            <option value="Natal">Natal</option>
-                            <option value="Perpisahan">Perpisahan</option>
-                            <option value="Tanpa Acara Khusus">Tanpa Acara Khusus</option>
-                        </select>
-                    </div>
-                    <input type="number" id="usia" min="1" max="120" placeholder="Usia (Cth: 25)" required class="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/70 dark:bg-gray-700/70 dark:text-white dark:placeholder-gray-400 focus:ring-2 focus:ring-pink-400 outline-none transition-all" />
-                    <textarea id="hobi" placeholder="Hobi atau minat (Cth: Suka ngopi, nonton drakor)..." required rows="3" class="w-full p-3.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/70 dark:bg-gray-700/70 dark:text-white dark:placeholder-gray-400 focus:ring-2 focus:ring-pink-400 outline-none transition-all"></textarea>
-                    <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-bold pointer-events-none">Rp</span>
-                        <input type="text" inputmode="numeric" id="budget" placeholder="150.000" required class="w-full p-3.5 pl-11 rounded-xl border border-gray-200 dark:border-gray-600 bg-white/70 dark:bg-gray-700/70 dark:text-white dark:placeholder-gray-400 focus:ring-2 focus:ring-pink-400 outline-none transition-all" />
-                    </div>
-
-                    <div id="formError" class="hidden text-sm font-medium text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded-lg px-4 py-3"></div>
-
-                    <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-pink-500 to-orange-400 hover:from-pink-600 hover:to-orange-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transform transition-all hover:-translate-y-1 hover:shadow-xl shadow-pink-200 dark:shadow-none">
-                        <span id="btnText">✨ Temukan Kado Terbaik</span>
-                        <div id="btnSpinner" class="spinner hidden"></div>
-                    </button>
-                </form>
-            </div>
-
-            <div class="md:col-span-7">
-                <div id="filterSection" class="hidden flex gap-2 mb-4">
-                    <button onclick="filterResults('lebih murah')" class="text-sm font-bold glass-card text-pink-600 dark:text-pink-300 px-5 py-2.5 rounded-full hover:scale-105 transition">💰 Lebih Murah</button>
-                    <button onclick="filterResults('lebih unik')" class="text-sm font-bold glass-card text-purple-600 dark:text-purple-300 px-5 py-2.5 rounded-full hover:scale-105 transition">✨ Lebih Unik</button>
-                </div>
-
-                <div id="loadingState" class="hidden h-64 flex flex-col items-center justify-center space-y-4 glass-card rounded-3xl">
-                    <div class="spinner-large"></div>
-                    <p class="text-pink-600 dark:text-pink-400 font-bold">Meracik ide kado spesial...</p>
-                </div>
-
-                <div id="resultsContainer" class="space-y-5"></div>
-            </div>
-        </div>
+    <div id="resultsSection">
+      <div class="results-header">
+        <p class="results-label" id="resultsLabel">— Meracik ide kado</p>
+      </div>
+      <div id="resultsContainer"></div>
     </div>
+  </section>
+</main>
 
-    <script>
-        // API KEY TELAH DIHAPUS DARI FRONTEND DEMI KEAMANAN!
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">GIF<em>To</em></div>
+    <span class="footer-credit">AI GIFT ASSISTANT · by @IchigoSky21</span>
+  </div>
+</footer>
 
-        // ===== Dark mode =====
-        function applyTheme(isDark) {
-            document.documentElement.classList.toggle('dark', isDark);
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            document.getElementById('themeToggleBtn').textContent = isDark ? '☀️' : '🌙';
-        }
-        document.getElementById('themeToggleBtn').textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
-        document.getElementById('themeToggleBtn').addEventListener('click', () => {
-            applyTheme(!document.documentElement.classList.contains('dark'));
-        });
+<script>
+'use strict';
 
-        // ===== PWA install prompt =====
-        let deferredInstallPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredInstallPrompt = e;
-            document.getElementById('installBtn').classList.remove('hidden');
-        });
-        document.getElementById('installBtn').addEventListener('click', async () => {
-            if (!deferredInstallPrompt) return;
-            deferredInstallPrompt.prompt();
-            await deferredInstallPrompt.userChoice;
-            deferredInstallPrompt = null;
-            document.getElementById('installBtn').classList.add('hidden');
-        });
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch((err) => console.log('SW registration gagal:', err));
-            });
-        }
+// ── Constants ────────────────────────────────────────
+const SC  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ◆★•';
+const LOADING_PHRASES = ['Meracik ide kado', 'Memilihkan yang spesial', 'Hampir siap untukmu', 'Sedikit lagi'];
+const HUBUNGAN = ['Teman','Sahabat','Pacar','Suami/Istri','Orang Tua','Anak','Saudara','Atasan/Bos','Rekan Kerja','Guru/Dosen'];
+const ACARA    = ['Ulang Tahun','Anniversary','Wisuda','Pernikahan','Kelahiran Bayi','Kenaikan Jabatan','Lebaran','Natal','Perpisahan','Tanpa Acara Khusus'];
+const CHIPS    = [['< 50rb','50000'],['100rb','100000'],['300rb','300000'],['500rb','500000'],['1 juta','1000000']];
+const BTN_ORIGINAL = 'Temukan Kado Terbaik';
 
-        // ===== Favorit =====
-        function getFavorites() {
-            try {
-                const raw = JSON.parse(localStorage.getItem('favs') || '[]');
-                return raw.map(item => typeof item === 'string'
-                    ? { namaKado: item, estimasiHarga: '', alasan: '', kataKunciPencarian: '' }
-                    : item);
-            } catch { return []; }
-        }
-        function saveFavorites(favs) { localStorage.setItem('favs', JSON.stringify(favs)); }
-        function isFavorited(namaKado) { return getFavorites().some(f => f.namaKado === namaKado); }
-        function toggleFavorite(kado, btnEl) {
-            let favs = getFavorites();
-            if (isFavorited(kado.namaKado)) {
-                favs = favs.filter(f => f.namaKado !== kado.namaKado);
-            } else {
-                favs.push(kado);
-            }
-            saveFavorites(favs);
-            if (btnEl) btnEl.style.color = isFavorited(kado.namaKado) ? '#db2777' : '#9ca3af';
-            renderFavoritPanel();
-        }
-        function renderFavoritPanel() {
-            const favs = getFavorites();
-            const countBadge = document.getElementById('favCount');
-            countBadge.textContent = favs.length;
-            countBadge.classList.toggle('hidden', favs.length === 0);
+// ── State ────────────────────────────────────────────
+let favs        = lsGet('gifto_favs_v2', []);
+let history     = lsGet('gifto_hist_v2', []);
+let currentRecs = [];
+let formInput   = {};
+let isDark      = lsGet('gifto_theme', null) === 'dark' ||
+                  (!lsGet('gifto_theme', null) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+let scramTimer  = null;
+let phraseTimer = null;
+let phraseIdx   = 0;
 
-            const container = document.getElementById('favoritList');
-            container.innerHTML = '';
-            if (favs.length === 0) {
-                const empty = document.createElement('p');
-                empty.className = 'text-sm text-gray-500 font-medium text-center py-6';
-                empty.textContent = 'Belum ada kado favorit. Tap ❤️ pada hasil rekomendasi untuk menyimpannya.';
-                container.appendChild(empty);
-                return;
-            }
-            favs.forEach((kado, i) => container.appendChild(createKadoCard(kado, i)));
-        }
-        document.getElementById('favToggleBtn').addEventListener('click', () => {
-            const panel = document.getElementById('favoritSection');
-            panel.classList.toggle('hidden');
-            if (!panel.classList.contains('hidden')) renderFavoritPanel();
-        });
+// ── Utils ────────────────────────────────────────────
+function lsGet(k, fallback) {
+  try { const v = JSON.parse(localStorage.getItem(k) ?? 'null'); return v !== null ? v : fallback; }
+  catch { return fallback; }
+}
+function lsSet(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+function fmtRp(s) { const d = String(s).replace(/\D/g,''); return d ? Number(d).toLocaleString('id-ID') : ''; }
+function rawRp(s) { return String(s).replace(/\D/g,''); }
+function genTilt() { return (Math.random() - .5) * 2.8; }
+function el(id) { return document.getElementById(id); }
 
-        // ===== Riwayat Pencarian =====
-        const HISTORY_KEY = 'kadoHistory';
-        const HISTORY_LIMIT = 10;
+// ── Toast ────────────────────────────────────────────
+const toastEl = el('toast');
+let toastTimer;
+function showToast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2600);
+}
 
-        function getHistory() {
-            try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
-        }
-        function saveHistory(list) { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); }
-        function addHistoryEntry(input, recs) {
-            const list = getHistory();
-            list.unshift({ id: Date.now().toString(), timestamp: new Date().toISOString(), input, recs });
-            while (list.length > HISTORY_LIMIT) list.pop();
-            saveHistory(list);
-            renderHistoryPanel();
-        }
-        function formatTimestamp(iso) {
-            return new Date(iso).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        }
-        function renderHistoryPanel() {
-            const list = getHistory();
-            const container = document.getElementById('historyList');
-            container.innerHTML = '';
+// ── Theme ────────────────────────────────────────────
+function applyTheme() {
+  document.documentElement.classList.toggle('dark', isDark);
+  el('themeBtn').textContent = isDark ? '☀' : '◑';
+  lsSet('gifto_theme', isDark ? 'dark' : 'light');
+}
+applyTheme();
+el('themeBtn').addEventListener('click', () => { isDark = !isDark; applyTheme(); });
 
-            if (list.length === 0) {
-                const empty = document.createElement('p');
-                empty.className = 'text-sm text-gray-500 font-medium text-center py-6';
-                empty.textContent = 'Belum ada riwayat pencarian.';
-                container.appendChild(empty);
-                return;
-            }
+// ── PWA ──────────────────────────────────────────────
+let deferredPWA;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPWA = e;
+  el('installBtn').style.display = 'inline-block';
+});
+el('installBtn').addEventListener('click', async () => {
+  if (!deferredPWA) return;
+  deferredPWA.prompt(); await deferredPWA.userChoice;
+  deferredPWA = null; el('installBtn').style.display = 'none';
+});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
 
-            list.forEach((entry) => {
-                const item = document.createElement('div');
-                item.className = 'flex items-center justify-between bg-white/50 dark:bg-gray-700/50 rounded-xl px-4 py-3 cursor-pointer hover:bg-pink-50 dark:hover:bg-gray-600 border border-gray-100 dark:border-gray-600 transition';
+// ── Populate selects ─────────────────────────────────
+HUBUNGAN.forEach(v => { const o = document.createElement('option'); o.value = o.textContent = v; el('hubungan').appendChild(o); });
+ACARA.forEach(v => { const o = document.createElement('option'); o.value = o.textContent = v; el('acara').appendChild(o); });
 
-                const info = document.createElement('div');
-                info.className = 'flex-1 min-w-0';
+// ── Scramble ─────────────────────────────────────────
+function startScramble() {
+  const btn = el('submitBtn');
+  if (btn.disabled) return;
+  let step = 0; const steps = 12;
+  clearInterval(scramTimer);
+  scramTimer = setInterval(() => {
+    step++;
+    if (step >= steps) { clearInterval(scramTimer); el('btnText').textContent = BTN_ORIGINAL; return; }
+    el('btnText').textContent = BTN_ORIGINAL.split('').map((ch, i) => {
+      if (ch === ' ') return ' ';
+      if (i < (step / steps) * BTN_ORIGINAL.length) return ch;
+      return SC[Math.floor(Math.random() * SC.length)];
+    }).join('');
+  }, 40);
+}
+function resetScramble() { clearInterval(scramTimer); el('btnText').textContent = BTN_ORIGINAL; }
+el('submitBtn').addEventListener('mouseenter', startScramble);
+el('submitBtn').addEventListener('mouseleave', resetScramble);
 
-                const summary = document.createElement('p');
-                summary.className = 'text-sm font-bold text-gray-800 dark:text-gray-200 truncate';
-                const budgetNum = Number(entry.input.budget) || 0;
-                summary.textContent = `${entry.input.hubungan} • ${entry.input.acara} • Rp${budgetNum.toLocaleString('id-ID')}`;
+// ── Loading phrases ───────────────────────────────────
+function startPhrases() {
+  phraseIdx = 0; el('btnText').textContent = LOADING_PHRASES[0];
+  el('resultsLabel').textContent = '— ' + LOADING_PHRASES[0];
+  phraseTimer = setInterval(() => {
+    phraseIdx = (phraseIdx + 1) % LOADING_PHRASES.length;
+    el('btnText').textContent = LOADING_PHRASES[phraseIdx];
+    el('resultsLabel').textContent = '— ' + LOADING_PHRASES[phraseIdx];
+  }, 1800);
+}
+function stopPhrases() {
+  clearInterval(phraseTimer);
+  el('btnText').textContent = BTN_ORIGINAL;
+}
 
-                const time = document.createElement('p');
-                time.className = 'text-xs font-semibold text-pink-500 mt-0.5';
-                time.textContent = formatTimestamp(entry.timestamp);
+// ── Budget ────────────────────────────────────────────
+el('budget').addEventListener('input', function() {
+  this.value = fmtRp(this.value);
+  const raw = rawRp(this.value);
+  const disp = el('budgetDisplay');
+  if (raw) { disp.textContent = 'Rp ' + Number(raw).toLocaleString('id-ID'); disp.style.display = 'block'; }
+  else { disp.style.display = 'none'; }
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+});
 
-                info.appendChild(summary);
-                info.appendChild(time);
+const chipsEl = el('budgetChips');
+CHIPS.forEach(([label, val]) => {
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'chip'; btn.textContent = label;
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    el('budget').value = fmtRp(val);
+    el('budget').dispatchEvent(new Event('input'));
+  });
+  chipsEl.appendChild(btn);
+});
 
-                const delBtn = document.createElement('button');
-                delBtn.className = 'text-gray-400 hover:text-red-500 px-2 text-lg shrink-0 transition hover:scale-110';
-                delBtn.textContent = '🗑';
-                delBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    saveHistory(getHistory().filter(h => h.id !== entry.id));
-                    renderHistoryPanel();
-                });
+// ── Hobi char counter ─────────────────────────────────
+el('hobi').addEventListener('input', function() {
+  el('hobiCount').textContent = this.value.length + ' karakter';
+});
 
-                item.addEventListener('click', () => {
-                    document.getElementById('hubungan').value = entry.input.hubungan;
-                    document.getElementById('acara').value = entry.input.acara;
-                    document.getElementById('usia').value = entry.input.usia;
-                    document.getElementById('hobi').value = entry.input.hobi;
-                    document.getElementById('budget').value = formatRupiah(String(entry.input.budget));
+// ── Panel toggle ──────────────────────────────────────
+function togglePanel(which) {
+  const panels = { history: 'historyPanel', favs: 'favsPanel' };
+  const btns   = { history: 'historyBtn',  favs: 'favsBtn'   };
+  Object.entries(panels).forEach(([key, id]) => {
+    const panelEl = el(id);
+    const btnEl   = el(btns[key]);
+    if (key === which) {
+      const opening = !panelEl.classList.contains('open');
+      panelEl.classList.toggle('open', opening);
+      btnEl.classList.toggle('active', opening);
+      if (opening) { key === 'history' ? renderHistoryPanel() : renderFavsPanel(); }
+    } else {
+      panelEl.classList.remove('open');
+      btnEl.classList.remove('active');
+    }
+  });
+}
+el('clearHistoryBtn').addEventListener('click', () => {
+  history = []; lsSet('gifto_hist_v2', history);
+  renderHistoryPanel(); showToast('Riwayat dihapus');
+});
 
-                    const resultsContainer = document.getElementById('resultsContainer');
-                    resultsContainer.innerHTML = '';
-                    entry.recs.forEach((kado, i) => resultsContainer.appendChild(createKadoCard(kado, i)));
-                    document.getElementById('filterSection').classList.remove('hidden');
-                    document.getElementById('historySection').classList.add('hidden');
-                });
+// ── Favorites ─────────────────────────────────────────
+function isFav(nama) { return favs.some(f => f.namaKado === nama); }
+function updateFavBadge() {
+  el('favBadge').textContent = favs.length;
+  el('favBadge').classList.toggle('visible', favs.length > 0);
+}
+function toggleFav(kado, btnEl) {
+  const was = isFav(kado.namaKado);
+  favs = was ? favs.filter(f => f.namaKado !== kado.namaKado) : [...favs, kado];
+  lsSet('gifto_favs_v2', favs);
+  if (btnEl) { btnEl.classList.toggle('active', !was); }
+  updateFavBadge();
+  showToast(was ? 'Dihapus dari koleksi' : 'Disimpan ke koleksi ♥');
+  if (el('favsPanel').classList.contains('open')) renderFavsPanel();
+}
+updateFavBadge();
 
-                item.appendChild(info);
-                item.appendChild(delBtn);
-                container.appendChild(item);
-            });
-        }
-        document.getElementById('historyToggleBtn').addEventListener('click', () => {
-            const panel = document.getElementById('historySection');
-            panel.classList.toggle('hidden');
-            if (!panel.classList.contains('hidden')) renderHistoryPanel();
-        });
-        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
-            saveHistory([]);
-            renderHistoryPanel();
-        });
+// ── History ───────────────────────────────────────────
+function addToHistory(input, recs) {
+  history.unshift({
+    id: Date.now().toString(),
+    ts: new Date().toLocaleString('id-ID', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }),
+    label: input.hubungan + ' · ' + input.acara + ' · Rp' + Number(input.budget).toLocaleString('id-ID'),
+    recs
+  });
+  if (history.length > 10) history.pop();
+  lsSet('gifto_hist_v2', history);
+}
 
-        // ===== Share WA =====
-        function shareWA(nama, harga) {
-            const text = `Hai! Aku nemu ide kado nih: ${nama} (Estimasi: ${harga}). Gimana menurutmu?`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-        }
+// ── Render panels ─────────────────────────────────────
+function renderHistoryPanel() {
+  const c = el('historyList'); c.innerHTML = '';
+  if (!history.length) { c.innerHTML = '<p class="empty-msg">Belum ada riwayat.</p>'; return; }
+  history.forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    const info = document.createElement('div');
+    const lbl = document.createElement('p'); lbl.className = 'history-label'; lbl.textContent = h.label;
+    const ts  = document.createElement('p'); ts.className  = 'history-ts';    ts.textContent  = h.ts;
+    info.appendChild(lbl); info.appendChild(ts);
+    const action = document.createElement('span'); action.className = 'history-action'; action.textContent = 'Muat →';
+    item.appendChild(info); item.appendChild(action);
+    item.addEventListener('click', () => {
+      currentRecs = h.recs; renderResults(h.recs);
+      el('historyPanel').classList.remove('open'); el('historyBtn').classList.remove('active');
+      showToast('Riwayat dimuat');
+    });
+    c.appendChild(item);
+  });
+}
+function renderFavsPanel() {
+  const c = el('favsList'); c.innerHTML = '';
+  if (!favs.length) { c.innerHTML = '<p class="empty-msg">Belum ada koleksi. Tap ♥ pada kartu kado.</p>'; return; }
+  favs.forEach(k => {
+    const item = document.createElement('div'); item.className = 'fav-item';
+    const info = document.createElement('div');
+    const name = document.createElement('p'); name.className = 'fav-name'; name.textContent = k.namaKado;
+    const price = document.createElement('p'); price.className = 'fav-price'; price.textContent = k.estimasiHarga;
+    info.appendChild(name); info.appendChild(price);
+    const btn = document.createElement('button'); btn.className = 'fav-remove'; btn.textContent = '♥';
+    btn.addEventListener('click', () => { toggleFav(k, null); renderFavsPanel(); });
+    item.appendChild(info); item.appendChild(btn);
+    c.appendChild(item);
+  });
+}
 
-        // ===== Render Kartu Kado =====
-        function createKadoCard(kado, index) {
-            const card = document.createElement('div');
-            card.className = 'glass-card p-5 rounded-3xl pop-in relative overflow-hidden flex flex-col md:flex-row gap-5';
-            card.style.animationDelay = `${index * 90}ms`;
+// ── Photo fetch ───────────────────────────────────────
+async function fetchPhoto(kado, imgEl, wrapEl) {
+  try {
+    const q = encodeURIComponent(kado.keywordInggris || kado.kataKunciPencarian || 'gift box present');
+    const res = await fetch('/api/pexels?query=' + q);
+    const data = await res.json();
+    if (data.photos && data.photos.length) {
+      imgEl.src = data.photos[0].src.medium;
+    } else { imgEl.dispatchEvent(new Event('error')); }
+  } catch { imgEl.dispatchEvent(new Event('error')); }
+}
 
-            // --- Pembungkus Gambar dengan Panggilan Backend Serverless ---
-            const imgWrap = document.createElement('div');
-            imgWrap.className = 'w-full md:w-1/3 h-48 md:h-auto shrink-0 rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center shadow-inner relative';
-            
-            const loadingText = document.createElement('span');
-            loadingText.className = 'text-xs font-bold text-gray-400 absolute animate-pulse z-0 text-center px-2';
-            loadingText.textContent = 'Mencari foto asli... 🔍';
-            imgWrap.appendChild(loadingText);
+// ── Card creation ─────────────────────────────────────
+function createCard(kado, index) {
+  const tilt = genTilt();
+  const card = document.createElement('div'); card.className = 'kado-card';
+  card.style.animationDelay = (index * 90) + 'ms';
+  card.addEventListener('mouseenter', () => {
+    card.style.transform = 'rotate(' + tilt + 'deg) translateY(-4px)';
+    card.style.boxShadow = '4px 8px 24px rgba(28,25,23,.12)';
+  });
+  card.addEventListener('mouseleave', () => { card.style.transform = ''; card.style.boxShadow = ''; });
 
-            const img = document.createElement('img');
-            img.alt = kado.namaKado;
-            img.className = 'w-full h-full object-cover transform transition duration-500 hover:scale-105 opacity-0 relative z-10';
-            
-            img.onload = () => {
-                img.classList.remove('opacity-0');
-                if (imgWrap.contains(loadingText)) imgWrap.removeChild(loadingText);
-            };
+  // Image
+  const imgWrap = document.createElement('div'); imgWrap.className = 'card-img-wrap';
+  const loadingTxt = document.createElement('span'); loadingTxt.className = 'card-img-loading'; loadingTxt.textContent = 'mencari foto...';
+  const img = document.createElement('img'); img.className = 'card-img'; img.alt = kado.namaKado || 'Kado';
+  img.addEventListener('load', () => { img.classList.add('loaded'); loadingTxt.remove(); });
+  img.addEventListener('error', () => {
+    imgWrap.innerHTML = ''; const fb = document.createElement('span'); fb.className = 'card-img-fallback'; fb.textContent = '🎁'; imgWrap.appendChild(fb);
+  });
+  imgWrap.appendChild(loadingTxt); imgWrap.appendChild(img);
+  fetchPhoto(kado, img, imgWrap);
 
-            img.onerror = () => {
-                imgWrap.innerHTML = '';
-                const fallback = document.createElement('span');
-                fallback.className = 'text-5xl relative z-10 hover:scale-125 transition transform duration-300';
-                fallback.textContent = '🎁';
-                imgWrap.appendChild(fallback);
-            };
-            imgWrap.appendChild(img);
+  // Number block
+  const num = document.createElement('div'); num.className = 'card-num';
+  num.textContent = String(index + 1).padStart(2, '0');
 
-            // Fetch foto melalui backend Vercel kita
-            async function fetchRealPhoto() {
-                try {
-                    const query = encodeURIComponent(kado.keywordInggris || kado.kataKunciPencarian || 'gift box');
-                    // Perhatikan: URL kini mengarah ke folder /api milik web Anda sendiri
-                    const response = await fetch(`/api/pexels?query=${query}`);
-                    const data = await response.json();
-                    
-                    if (data.photos && data.photos.length > 0) {
-                        img.src = data.photos[0].src.medium; 
-                    } else {
-                        img.dispatchEvent(new Event('error')); 
-                    }
-                } catch (error) {
-                    img.dispatchEvent(new Event('error'));
-                }
-            }
-            fetchRealPhoto();
+  // Content
+  const content = document.createElement('div'); content.className = 'card-content';
 
-            // --- Konten Teks ---
-            const content = document.createElement('div');
-            content.className = 'flex-1 flex flex-col justify-center';
+  const topRow = document.createElement('div'); topRow.className = 'card-top-row';
+  const title = document.createElement('h3'); title.className = 'card-title'; title.textContent = kado.namaKado;
+  const favBtn = document.createElement('button'); favBtn.className = 'fav-btn'; favBtn.textContent = '♥';
+  favBtn.title = 'Simpan ke koleksi';
+  if (isFav(kado.namaKado)) favBtn.classList.add('active');
+  favBtn.addEventListener('click', () => toggleFav(kado, favBtn));
+  topRow.appendChild(title); topRow.appendChild(favBtn);
 
-            const title = document.createElement('h3');
-            title.className = 'font-extrabold text-2xl text-gray-900 dark:text-white leading-tight';
-            title.textContent = kado.namaKado;
+  const priceRow = document.createElement('div'); priceRow.className = 'price-row';
+  const priceLbl = document.createElement('span'); priceLbl.className = 'price-lbl'; priceLbl.textContent = 'estimasi';
+  const priceTag = document.createElement('span'); priceTag.className = 'price-tag'; priceTag.textContent = kado.estimasiHarga;
+  priceRow.appendChild(priceLbl); priceRow.appendChild(priceTag);
 
-            const priceWrap = document.createElement('div');
-            priceWrap.className = 'mt-2 mb-3';
-            const price = document.createElement('span');
-            price.className = 'text-pink-600 dark:text-pink-400 text-sm font-extrabold bg-pink-100 dark:bg-pink-900/30 px-3 py-1 rounded-lg inline-block';
-            price.textContent = kado.estimasiHarga;
-            priceWrap.appendChild(price);
+  const desc = document.createElement('p'); desc.className = 'card-desc'; desc.textContent = kado.alasan;
 
-            const reason = document.createElement('p');
-            reason.className = 'text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium mb-5';
-            reason.textContent = kado.alasan;
+  const actions = document.createElement('div'); actions.className = 'card-actions';
 
-            const actions = document.createElement('div');
-            actions.className = 'flex flex-wrap gap-2 items-center mt-auto';
+  const shareBtn = document.createElement('button'); shareBtn.className = 'action-btn'; shareBtn.textContent = 'Bagikan';
+  shareBtn.addEventListener('click', () => {
+    const text = 'Ide kado: ' + kado.namaKado + ' (' + kado.estimasiHarga + ')\nhttps://www.tokopedia.com/search?q=' + encodeURIComponent(kado.kataKunciPencarian || kado.namaKado);
+    if (navigator.share) navigator.share({ title: kado.namaKado, text }).catch(() => {});
+    else window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+  });
+  actions.appendChild(shareBtn);
 
-            const waBtn = document.createElement('button');
-            waBtn.className = 'text-sm font-bold bg-white dark:bg-gray-700 text-green-600 border border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-gray-600 px-4 py-2 rounded-xl transition shadow-sm';
-            waBtn.textContent = '💬 Bagikan';
-            waBtn.addEventListener('click', () => shareWA(kado.namaKado, kado.estimasiHarga));
-            actions.appendChild(waBtn);
+  if (kado.kataKunciPencarian) {
+    const tokLink = document.createElement('a'); tokLink.className = 'action-link action-link--sage';
+    tokLink.href = 'https://www.tokopedia.com/search?q=' + encodeURIComponent(kado.kataKunciPencarian);
+    tokLink.target = '_blank'; tokLink.rel = 'noopener noreferrer'; tokLink.textContent = 'Tokopedia ↗';
+    actions.appendChild(tokLink);
 
-            if (kado.kataKunciPencarian) {
-                const tokopediaLink = document.createElement('a');
-                tokopediaLink.href = `https://www.tokopedia.com/search?st=product&q=${encodeURIComponent(kado.kataKunciPencarian)}`;
-                tokopediaLink.target = '_blank';
-                tokopediaLink.rel = 'noopener noreferrer';
-                tokopediaLink.className = 'text-sm font-bold bg-white dark:bg-gray-700 text-blue-600 border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-gray-600 px-4 py-2 rounded-xl transition shadow-sm flex items-center gap-1';
-                tokopediaLink.textContent = '🛒 Tokopedia';
-                actions.appendChild(tokopediaLink);
+    const shopLink = document.createElement('a'); shopLink.className = 'action-link action-link--amber';
+    shopLink.href = 'https://shopee.co.id/search?keyword=' + encodeURIComponent(kado.kataKunciPencarian);
+    shopLink.target = '_blank'; shopLink.rel = 'noopener noreferrer'; shopLink.textContent = 'Shopee ↗';
+    actions.appendChild(shopLink);
+  }
 
-                const shopeeLink = document.createElement('a');
-                shopeeLink.href = `https://shopee.co.id/search?keyword=${encodeURIComponent(kado.kataKunciPencarian)}`;
-                shopeeLink.target = '_blank';
-                shopeeLink.rel = 'noopener noreferrer';
-                shopeeLink.className = 'text-sm font-bold bg-white dark:bg-gray-700 text-orange-600 border border-orange-200 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-gray-600 px-4 py-2 rounded-xl transition shadow-sm flex items-center gap-1';
-                shopeeLink.textContent = '🛍️ Shopee';
-                actions.appendChild(shopeeLink);
-            }
+  content.appendChild(topRow); content.appendChild(priceRow);
+  content.appendChild(desc); content.appendChild(actions);
 
-            const favBtn = document.createElement('button');
-            favBtn.className = 'text-2xl transition ml-auto hover:scale-110';
-            favBtn.textContent = '❤️';
-            favBtn.style.color = isFavorited(kado.namaKado) ? '#db2777' : '#9ca3af';
-            favBtn.addEventListener('click', () => toggleFavorite(kado, favBtn));
-            actions.appendChild(favBtn);
+  card.appendChild(imgWrap); card.appendChild(num); card.appendChild(content);
+  return card;
+}
 
-            content.appendChild(title);
-            content.appendChild(priceWrap);
-            content.appendChild(reason);
-            content.appendChild(actions);
+// ── Skeleton ──────────────────────────────────────────
+function createSkeleton(index) {
+  const card = document.createElement('div'); card.className = 'kado-card';
+  card.style.animationDelay = (index * 60) + 'ms';
+  card.innerHTML =
+    '<div class="card-img-wrap" style="background:var(--rule-soft)"></div>' +
+    '<div class="card-num" style="background:var(--rule)"></div>' +
+    '<div class="card-content" style="gap:10px;padding:16px 18px">' +
+      '<div class="skel" style="height:17px;width:62%;border-radius:2px"></div>' +
+      '<div class="skel" style="height:12px;width:32%;border-radius:2px"></div>' +
+      '<div class="skel" style="height:11px;width:100%;border-radius:2px"></div>' +
+      '<div class="skel" style="height:11px;width:84%;border-radius:2px"></div>' +
+      '<div class="skel" style="height:11px;width:68%;border-radius:2px"></div>' +
+      '<div style="display:flex;gap:8px;margin-top:4px">' +
+        '<div class="skel" style="height:27px;width:66px;border-radius:2px"></div>' +
+        '<div class="skel" style="height:27px;width:88px;border-radius:2px"></div>' +
+        '<div class="skel" style="height:27px;width:72px;border-radius:2px"></div>' +
+      '</div>' +
+    '</div>';
+  return card;
+}
 
-            card.appendChild(imgWrap);
-            card.appendChild(content);
-            return card;
-        }
+// ── Show skeletons ────────────────────────────────────
+function showSkeletons() {
+  el('emptyState').style.display = 'none';
+  el('resultsSection').style.display = 'block';
+  el('filterChips').style.display = 'none';
+  const c = el('resultsContainer'); c.innerHTML = '';
+  for (let i = 0; i < 6; i++) c.appendChild(createSkeleton(i));
+}
 
-        async function filterResults(tipe) {
-            const hobi = document.getElementById('hobi').value;
-            document.getElementById('hobi').value = `${hobi}, tolong cari opsi yang ${tipe} saja`;
-            document.getElementById('giftForm').dispatchEvent(new Event('submit'));
-        }
+// ── Render results ────────────────────────────────────
+function renderResults(recs) {
+  el('emptyState').style.display = 'none';
+  el('resultsSection').style.display = 'block';
+  el('filterChips').style.display = 'flex';
+  el('resultsLabel').textContent = '— ' + recs.length + ' Rekomendasi Terpilih';
+  const c = el('resultsContainer'); c.innerHTML = '';
+  recs.forEach((k, i) => c.appendChild(createCard(k, i)));
+}
 
-        function formatRupiah(value) {
-            const digits = value.replace(/\D/g, '');
-            if (!digits) return '';
-            return Number(digits).toLocaleString('id-ID');
-        }
-        function getRawBudget() {
-            return document.getElementById('budget').value.replace(/\D/g, '');
-        }
-        document.getElementById('budget').addEventListener('input', (e) => {
-            e.target.value = formatRupiah(e.target.value);
-        });
+// ── Filter buttons ────────────────────────────────────
+el('filterCheap').addEventListener('click', () => {
+  el('hobi').value += ', cari yang lebih murah dan terjangkau';
+  el('giftForm').dispatchEvent(new Event('submit'));
+});
+el('filterUnique').addEventListener('click', () => {
+  el('hobi').value += ', cari yang paling unik dan tidak biasa';
+  el('giftForm').dispatchEvent(new Event('submit'));
+});
 
-        function validateForm() {
-            const usia = Number(document.getElementById('usia').value);
-            const budget = Number(getRawBudget());
-            const errorBox = document.getElementById('formError');
-            errorBox.classList.add('hidden');
-            errorBox.textContent = '';
+// ── Form submit ───────────────────────────────────────
+el('giftForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const budget = rawRp(el('budget').value);
+  const usia   = Number(el('usia').value);
+  const errEl  = el('formError'); const errMsg = el('formErrorMsg');
+  errEl.style.display = 'none';
 
-            if (!usia || usia < 1 || usia > 120) {
-                errorBox.textContent = 'Mohon masukkan usia yang valid (1-120 tahun).';
-                errorBox.classList.remove('hidden'); return false;
-            }
-            if (!budget || budget < 1000) {
-                errorBox.textContent = 'Budget rasanya terlalu kecil, minimal Rp1.000 ya.';
-                errorBox.classList.remove('hidden'); return false;
-            }
-            return true;
-        }
+  if (!usia || usia < 1 || usia > 120) {
+    errMsg.textContent = 'Usia harus antara 1–120 tahun.'; errEl.style.display = 'block'; return;
+  }
+  if (!budget || Number(budget) < 1000) {
+    errMsg.textContent = 'Budget minimal Rp1.000.'; errEl.style.display = 'block'; return;
+  }
 
-        document.getElementById('giftForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!validateForm()) return;
+  formInput = {
+    hubungan: el('hubungan').value,
+    acara:    el('acara').value,
+    gender:   el('gender').value,
+    usia,
+    hobi:     el('hobi').value,
+    budget
+  };
 
-            document.getElementById('loadingState').classList.remove('hidden');
-            document.getElementById('filterSection').classList.add('hidden');
-            document.getElementById('resultsContainer').innerHTML = '';
+  const btn = el('submitBtn'); btn.disabled = true;
+  startPhrases(); showSkeletons();
 
-            const btn = document.getElementById('submitBtn');
-            const btnText = document.getElementById('btnText');
-            const btnSpinner = document.getElementById('btnSpinner');
-            btn.disabled = true;
-            btnText.textContent = 'Meracik Ide...';
-            btnSpinner.classList.remove('hidden');
+  const prompt = 'Berikan 6 rekomendasi kado yang sangat bervariasi dan unik untuk '
+    + formInput.hubungan + ' (' + formInput.gender + ') dalam rangka ' + formInput.acara
+    + ', usia ' + formInput.usia + ' tahun, hobi/minat: ' + formInput.hobi
+    + '. Budget maksimal Rp' + budget
+    + '. Format JSON: {recommendations:[{namaKado,estimasiHarga,alasan,kataKunciPencarian,keywordInggris}]}';
 
-            const formInput = {
-                hubungan: document.getElementById('hubungan').value,
-                acara: document.getElementById('acara').value,
-                usia: document.getElementById('usia').value,
-                hobi: document.getElementById('hobi').value,
-                budget: getRawBudget()
-            };
-
-            const prompt = `Berikan 6 rekomendasi kado yang sangat bervariasi dan unik untuk ${formInput.hubungan} dalam rangka ${formInput.acara}, usia ${formInput.usia} tahun, dengan hobi/minat: ${formInput.hobi}. Budget maksimal Rp${formInput.budget}. Format JSON: {recommendations: [{namaKado, estimasiHarga, alasan, kataKunciPencarian, keywordInggris}]}`;
-
-            try {
-                // Perhatikan: URL kini mengarah ke folder /api milik web Anda sendiri
-                const response = await fetch(`/api/gemini`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ prompt: prompt })
-                });
-
-                if (!response.ok) throw new Error('Network response was not ok');
-
-                const data = await response.json();
-                const jsonText = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '');
-                const recs = JSON.parse(jsonText).recommendations;
-
-                document.getElementById('loadingState').classList.add('hidden');
-                document.getElementById('filterSection').classList.remove('hidden');
-
-                const container = document.getElementById('resultsContainer');
-                recs.forEach((kado, i) => container.appendChild(createKadoCard(kado, i)));
-
-                addHistoryEntry(formInput, recs);
-            } catch (err) {
-                document.getElementById('loadingState').classList.add('hidden');
-                const errorBox = document.getElementById('formError');
-                errorBox.textContent = 'Oops! Gagal mengambil rekomendasi. Cek koneksi Anda.';
-                errorBox.classList.remove('hidden');
-            } finally {
-                btn.disabled = false;
-                btnText.textContent = '✨ Temukan Kado Terbaik';
-                btnSpinner.classList.add('hidden');
-            }
-        });
-
-        renderFavoritPanel();
-        renderHistoryPanel();
-    </script>
+  try {
+    const res = await fetch('/api/gemini', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const text = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '');
+    currentRecs = JSON.parse(text).recommendations;
+    renderResults(currentRecs);
+    addToHistory(formInput, currentRecs);
+    showToast('6 rekomendasi siap ↓');
+  } catch (err) {
+    el('resultsContainer').innerHTML = '';
+    el('resultsSection').style.display = 'none';
+    el('emptyState').style.display = 'block';
+    errMsg.textContent = 'Gagal mengambil rekomendasi. Coba lagi.';
+    errEl.style.display = 'block';
+    showToast('Koneksi gagal, coba ulangi');
+  } finally {
+    stopPhrases(); btn.disabled = false;
+  }
+});
+</script>
 </body>
 </html>
